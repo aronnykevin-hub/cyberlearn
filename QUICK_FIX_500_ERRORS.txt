@@ -1,0 +1,66 @@
+# 🚨 QUICK FIX: 500 Errors in 5 Minutes
+
+## What's Wrong
+Your Supabase queries return **500 Internal Server Error** on:
+- `GET /company_members` 
+- `GET /companies`
+
+## Root Cause
+❌ Database RLS policies have recursive queries causing infinite loops
+
+## Fix NOW
+
+### Step 1: Go to Supabase (2 min)
+1. https://app.supabase.com → Your Project
+2. Click **SQL Editor** → New Query
+
+### Step 2: Drop Old Policies (1 min)
+
+Copy & execute this:
+```sql
+DROP POLICY IF EXISTS company_members_admin ON public.company_members;
+DROP POLICY IF EXISTS companies_update_creator ON public.companies;
+DROP POLICY IF EXISTS companies_select_creator ON public.companies;
+```
+
+### Step 3: Run Fixed Schema (1 min)
+
+Open file: `backend/database/schema/10_company_access_control.sql`
+- Copy ALL content
+- Paste into Supabase SQL Editor
+- Click Execute
+
+### Step 4: Test (1 min)
+
+Refresh browser. Test this in console:
+```javascript
+// Should work now (no 500 error)
+const { data, error } = await supabase
+  .from('company_members')
+  .select('*')
+  .limit(1);
+
+console.log(data); // Should return data or empty array, NOT error
+```
+
+---
+
+## ✅ Done!
+
+No more 500 errors. Your frontend should work now.
+
+**Next:** Test signup flow:
+1. Sign up new user
+2. Should see "Create Organization" page
+3. Success! 🎉
+
+---
+
+## Still Broken?
+
+Check Supabase logs:
+1. Dashboard → Logs
+2. Look for database errors
+3. See DEPLOYMENT_GUIDE.md for detailed troubleshooting
+
+**Most common issue:** Schema file didn't run fully - scroll to bottom in SQL Editor and check for success message.

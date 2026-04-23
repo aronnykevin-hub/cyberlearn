@@ -1,0 +1,18 @@
+{
+  "name": "cyberlearn-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Cyberlearn backend database initialization scripts",
+  "scripts": {
+    "init": "node initialize_db.js",
+    "init:clean": "node initialize_db.js --clean",
+    "init:verbose": "node initialize_db.js --verbose"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.89.0",
+    "dotenv": "^16.4.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
