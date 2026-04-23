@@ -384,16 +384,16 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                 {
                   step: 3,
                   title: "Deploy Custom Training Modules",
-                  description: "Create or assign department-specific training tailored to your organization",
+                  description: "Assign department-specific training tailored to your organization. Modules and schedules are managed automatically.",
                   icon: BookOpen,
-                  highlights: ["Create modules", "Customize content", "Set schedules"]
+                  highlights: ["Assign modules", "Department-based", "Automated scheduling"]
                 },
                 {
                   step: 4,
-                  title: "Send Phishing Simulations",
-                  description: "Test employee awareness with realistic phishing campaigns and fake notifications",
+                  title: "Automated Phishing Simulations",
+                  description: "The system automatically sends realistic phishing campaigns and fake notifications to test employee awareness.",
                   icon: Bell,
-                  highlights: ["Schedule campaigns", "Customize templates", "Track responses"]
+                  highlights: ["Fully automated", "No manual setup", "Realistic scenarios"]
                 },
                 {
                   step: 5,

@@ -200,7 +200,7 @@ export const permissionService = {
         const { data } = await supabase
           .from('threat_reports')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('reporter_id', user.id)
           .order('created_at', { ascending: false });
         return data || [];
       }

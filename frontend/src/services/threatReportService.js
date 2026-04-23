@@ -70,7 +70,12 @@ async function listRepliesByReportIds(reportIds) {
     .in('report_id', reportIds)
     .order('created_at', { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === '42P01' || /threat_report_replies/i.test(error.message || '')) {
+      return new Map();
+    }
+    throw new Error(error.message);
+  }
 
   const grouped = new Map();
   for (const row of data || []) {
@@ -318,7 +323,14 @@ export async function replyToThreatReport(reportId, message, nextStatus = null) 
           message: trimmedMessage,
         });
 
-      if (insertReplyError) throw new Error(insertReplyError.message);
+      if (insertReplyError) {
+        if (insertReplyError.code === '42P01' || /threat_report_replies/i.test(insertReplyError.message || '')) {
+          throw new Error(
+            'Database migration missing: run backend/database/schema/16_threat_report_replies_and_auto_notifications.sql.',
+          );
+        }
+        throw new Error(insertReplyError.message);
+      }
 
       const updates = {
         admin_notes: reportRow.admin_notes
@@ -406,4 +418,3 @@ export async function getThreatReportStatistics(companyId = null) {
 
   return stats;
 }
-

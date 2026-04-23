@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, Users, BookOpen, AlertTriangle, Zap, Award, Settings, BarChart3, UserPlus, UserCheck } from 'lucide-react';
+import { Building2, Users, BookOpen, AlertTriangle, Zap, Award, Settings, BarChart3, UserPlus, UserCheck, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 import { companyService } from '../services/companyService';
 import { ensureDepartmentLearningModules } from '../services/trainingModuleService';
 import CompanyMembersPanel from './CompanyMembersPanel';
 import AdminUserAssignment from './AdminUserAssignment';
+import AdminReportsPanel from './AdminReportsPanel';
 import { TrainingList } from '../TrainingList';
 import { AdminTraining } from '../AdminTraining';
 
@@ -25,6 +26,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
   const [hasAttemptedAutoInit, setHasAttemptedAutoInit] = useState(false);
   const managementSectionRef = useRef(null);
   const trainingSectionRef = useRef(null);
+  const reportsSectionRef = useRef(null);
 
   const navigateTo = (path) => {
     window.location.assign(path);
@@ -44,6 +46,15 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     setTrainingPanel(panel);
     requestAnimationFrame(() => {
       trainingSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    });
+  };
+
+  const scrollToReports = () => {
+    requestAnimationFrame(() => {
+      reportsSectionRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -103,6 +114,47 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
   useEffect(() => {
     if (companyId) loadStats();
   }, [companyId]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail || {};
+      const target = detail.target;
+
+      if (target === 'training-learn') {
+        scrollToTraining('learn');
+        return;
+      }
+
+      if (target === 'training-analytics') {
+        scrollToTraining('analytics');
+        return;
+      }
+
+      if (target === 'team-members') {
+        scrollToManagement('members');
+        return;
+      }
+
+      if (target === 'departments') {
+        scrollToManagement('departments');
+        return;
+      }
+
+      if (target === 'reports') {
+        scrollToReports();
+        return;
+      }
+
+      if (target === 'dashboard-top') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    window.addEventListener('cyberlearn:navigate', handler as EventListener);
+    return () => {
+      window.removeEventListener('cyberlearn:navigate', handler as EventListener);
+    };
+  }, []);
 
   const initializeDepartmentModules = async () => {
     if (!companyId || initializingTrainingModules) {
@@ -189,7 +241,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
       color: 'from-red-500 to-red-600',
       stat: stats.threatReports,
       statLabel: 'Reports',
-      action: () => navigateTo('/admin-reports'),
+      action: () => scrollToReports(),
       actionText: 'Review'
     },
     {
@@ -369,6 +421,29 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
         </div>
 
         {trainingPanel === 'learn' ? <TrainingList /> : <AdminTraining />}
+      </div>
+
+      <div
+        ref={reportsSectionRef}
+        className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-lg p-6 space-y-4"
+      >
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Threat Report Center</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Review employee reports, reply directly, and track report resolution status.
+            </p>
+          </div>
+          <button
+            onClick={() => scrollToReports()}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Open Reports
+          </button>
+        </div>
+
+        <AdminReportsPanel companyId={companyId} />
       </div>
 
       <div

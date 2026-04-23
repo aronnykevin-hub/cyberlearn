@@ -27,6 +27,7 @@ export default function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const isAdmin = profile?.role === 'admin';
 
   // Initialize auth state listener
   useEffect(() => {
@@ -232,6 +233,122 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden">
+            <div
+              className="fixed inset-0 z-40 bg-black/30"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="fixed top-16 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg">
+              <div className="px-4 py-4 space-y-2">
+                <button
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'dashboard-top' } }));
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'training-learn' } }));
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                >
+                  Training Modules
+                </button>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'reports' } }));
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                >
+                  Threat Reports
+                </button>
+                {isAdmin && (
+                  <>
+                    <button
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'training-analytics' } }));
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                      Team Analytics
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'team-members' } }));
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                      Team Members
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'departments' } }));
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                      Assign Departments
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        window.location.assign('/phishing-campaigns');
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                      Phishing Simulations
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        window.location.assign('/certificates');
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                      Certificates
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        window.location.assign('/company-settings');
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                      Company Settings
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => {
+                    setShowNotifications(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                >
+                  Notifications
+                </button>
+                <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 dark:border-slate-700">
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Theme</span>
+                  <ThemeToggle />
+                </div>
+                <div className="px-3 pt-2">
+                  <SignOutButton />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Notifications Panel */}
         {showNotifications && (
