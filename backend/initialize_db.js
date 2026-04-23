@@ -120,7 +120,12 @@ async function initializeDatabase() {
       '08_onboarding.sql',
       '09_phishing_and_certificates.sql',
       '10_company_access_control.sql',
-      '11_fix_user_role_assignment.sql',
+      '../11_fix_user_role_assignment.sql',
+      '12_admin_training_learning_access.sql',
+      '13_training_completion_certificates.sql',
+      '14_company_profile_alignment.sql',
+      '15_team_member_user_search_and_default_departments.sql',
+      '16_threat_report_replies_and_auto_notifications.sql',
     ];
 
     console.log('📝 Creating tables and policies...');

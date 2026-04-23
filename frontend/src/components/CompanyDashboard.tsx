@@ -3,8 +3,11 @@ import { Building2, Users, BookOpen, AlertTriangle, Zap, Award, Settings, BarCha
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 import { companyService } from '../services/companyService';
+import { ensureDepartmentLearningModules } from '../services/trainingModuleService';
 import CompanyMembersPanel from './CompanyMembersPanel';
 import AdminUserAssignment from './AdminUserAssignment';
+import { TrainingList } from '../TrainingList';
+import { AdminTraining } from '../AdminTraining';
 
 export const CompanyDashboard = ({ companyId, companyName }) => {
   const [stats, setStats] = useState({
@@ -17,7 +20,11 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
   });
   const [loading, setLoading] = useState(true);
   const [activePanel, setActivePanel] = useState('members');
+  const [trainingPanel, setTrainingPanel] = useState<'learn' | 'analytics'>('learn');
+  const [initializingTrainingModules, setInitializingTrainingModules] = useState(false);
+  const [hasAttemptedAutoInit, setHasAttemptedAutoInit] = useState(false);
   const managementSectionRef = useRef(null);
+  const trainingSectionRef = useRef(null);
 
   const navigateTo = (path) => {
     window.location.assign(path);
@@ -27,6 +34,16 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     setActivePanel(panel);
     requestAnimationFrame(() => {
       managementSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    });
+  };
+
+  const scrollToTraining = (panel) => {
+    setTrainingPanel(panel);
+    requestAnimationFrame(() => {
+      trainingSectionRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -87,6 +104,38 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     if (companyId) loadStats();
   }, [companyId]);
 
+  const initializeDepartmentModules = async () => {
+    if (!companyId || initializingTrainingModules) {
+      return;
+    }
+
+    setInitializingTrainingModules(true);
+    try {
+      const result = await ensureDepartmentLearningModules(companyId);
+      if (result.createdDepartments > 0 || result.createdModules > 0) {
+        toast.success(
+          `Learning setup complete: ${result.createdDepartments} department(s), ${result.createdModules} module(s).`,
+        );
+      }
+      await loadStats();
+    } catch (error: any) {
+      console.error('Failed to initialize department learning modules:', error);
+      toast.error(error?.message || 'Failed to initialize department learning modules.');
+    } finally {
+      setInitializingTrainingModules(false);
+      setHasAttemptedAutoInit(true);
+    }
+  };
+
+  useEffect(() => {
+    if (trainingPanel !== 'learn') return;
+    if (!companyId) return;
+    if (stats.trainingModules > 0) return;
+    if (hasAttemptedAutoInit) return;
+    if (initializingTrainingModules) return;
+    void initializeDepartmentModules();
+  }, [trainingPanel, companyId, stats.trainingModules, hasAttemptedAutoInit, initializingTrainingModules]);
+
   const services = [
     {
       number: 1,
@@ -113,13 +162,13 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     {
       number: 3,
       title: 'Training Modules',
-      description: 'Create and deploy custom training content',
+      description: 'Learn and deploy custom training content',
       icon: BookOpen,
       color: 'from-green-500 to-green-600',
       stat: stats.trainingModules,
       statLabel: 'Modules',
-      action: () => navigateTo('/admin-training'),
-      actionText: 'View'
+      action: () => scrollToTraining('learn'),
+      actionText: 'Learn'
     },
     {
       number: 4,
@@ -271,6 +320,55 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
             </div>
           );
         })}
+      </div>
+
+      <div
+        ref={trainingSectionRef}
+        className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-lg p-6 space-y-6"
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Training Workspace</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Admins can learn modules directly and monitor team completion/quiz scores.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setTrainingPanel('learn')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                trainingPanel === 'learn'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              Learn Modules
+            </button>
+            <button
+              onClick={() => setTrainingPanel('analytics')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                trainingPanel === 'analytics'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              Team Analytics
+            </button>
+            {trainingPanel === 'learn' && (
+              <button
+                onClick={() => void initializeDepartmentModules()}
+                disabled={initializingTrainingModules}
+                className="px-4 py-2 rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {initializingTrainingModules ? 'Preparing Modules...' : 'Create Department Modules'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {trainingPanel === 'learn' ? <TrainingList /> : <AdminTraining />}
       </div>
 
       <div

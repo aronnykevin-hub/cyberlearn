@@ -129,43 +129,63 @@ export const companyService = {
   },
 
   // Add existing user to organization
-  async addUserToCompany(companyId, userEmail, role = 'member') {
+  async addUserToCompany(companyId, userInput, role = 'member') {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error('User not authenticated');
 
-      const normalizedEmail = userEmail.trim().toLowerCase();
+      let resolvedUserId = null;
+      let resolvedEmail = '';
+      let wasAlreadyMember = false;
+      let previousRole = null;
 
-      // Resolve the user from Supabase auth and mirror them into public tables if needed.
-      const { data: foundUsers, error: findError } = await supabase.rpc('find_cyberlearn_user_by_email', {
-        p_email: normalizedEmail
-      });
-
-      if (findError) {
-        if (findError.code === 'PGRST202' || findError.status === 404 || /could not find the function/i.test(findError.message || '')) {
+      if (typeof userInput === 'object' && userInput !== null && (userInput.userId || userInput.user_id)) {
+        resolvedUserId = userInput.userId || userInput.user_id;
+        resolvedEmail = (userInput.email || '').trim().toLowerCase();
+        wasAlreadyMember = Boolean(userInput.isCompanyMember ?? userInput.is_company_member);
+        previousRole = userInput.memberRole || userInput.member_role || null;
+      } else {
+        const normalizedEmail = String(userInput || '').trim().toLowerCase();
+        if (!normalizedEmail) {
           return {
             success: false,
-            error: 'Database migration missing: run backend/database/schema/10_company_access_control.sql so Google-auth users can be resolved.'
+            error: 'User email is required'
           };
         }
 
-        throw findError;
-      }
+        // Resolve the user from Supabase auth and mirror them into public tables if needed.
+        const { data: foundUsers, error: findError } = await supabase.rpc('find_cyberlearn_user_by_email', {
+          p_email: normalizedEmail
+        });
 
-      const user = Array.isArray(foundUsers) ? foundUsers[0] : foundUsers;
+        if (findError) {
+          if (findError.code === 'PGRST202' || findError.status === 404 || /could not find the function/i.test(findError.message || '')) {
+            return {
+              success: false,
+              error: 'Database migration missing: run backend/database/schema/10_company_access_control.sql so Google-auth users can be resolved.'
+            };
+          }
 
-      if (!user) {
-        return {
-          success: false,
-          error: 'User not found in CyberLearn system'
-        };
+          throw findError;
+        }
+
+        const user = Array.isArray(foundUsers) ? foundUsers[0] : foundUsers;
+        if (!user) {
+          return {
+            success: false,
+            error: 'User not found in CyberLearn system'
+          };
+        }
+
+        resolvedUserId = user.user_id;
+        resolvedEmail = (user.email || normalizedEmail).trim().toLowerCase();
       }
 
       // Add user to company
       const { error } = await supabase
         .rpc('add_user_to_company', {
           p_company_id: companyId,
-          p_user_id: user.user_id,
+          p_user_id: resolvedUserId,
           p_added_by: currentUser.id,
           p_role: role
         });
@@ -174,14 +194,130 @@ export const companyService = {
 
       return {
         success: true,
-        userId: user.user_id,
-        message: 'User added to organization successfully'
+        userId: resolvedUserId,
+        userEmail: resolvedEmail,
+        alreadyMember: wasAlreadyMember,
+        previousRole,
+        message: wasAlreadyMember
+          ? 'User already existed in organization. Membership updated.'
+          : 'User added to organization successfully'
       };
     } catch (error) {
       console.error('Error adding user to organization:', error);
       return {
         success: false,
         error: error.message || 'Failed to add user to organization'
+      };
+    }
+  },
+
+  // Ensure default departments exist for a company
+  async ensureCompanyDefaultDepartments(companyId) {
+    try {
+      const { data, error } = await supabase
+        .rpc('ensure_company_default_departments', {
+          p_company_id: companyId
+        });
+
+      if (error) {
+        if (error.code === 'PGRST202' || error.status === 404 || /could not find the function/i.test(error.message || '')) {
+          return {
+            success: false,
+            error: 'Database migration missing: run backend/database/schema/15_team_member_user_search_and_default_departments.sql.'
+          };
+        }
+        throw error;
+      }
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error ensuring default departments:', {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        status: error?.status,
+      });
+      return {
+        success: false,
+        error:
+          [
+            error?.message,
+            error?.details,
+            error?.hint,
+          ]
+            .filter(Boolean)
+            .join(' | ') || 'Failed to ensure default departments'
+      };
+    }
+  },
+
+  // Search CyberLearn users by name/email for adding to a company
+  async searchUsersForCompany(companyId, query = '', limit = 20) {
+    try {
+      const rpcPayload = {
+        p_company_id: companyId,
+        p_query: String(query ?? ''),
+        p_limit: Number(limit) || 20,
+      };
+
+      const { data, error } = await supabase
+        .rpc('search_cyberlearn_users', rpcPayload);
+
+      if (error) {
+        if (error.code === 'PGRST202' || error.status === 404 || /could not find the function/i.test(error.message || '')) {
+          return {
+            success: false,
+            error: 'Database migration missing: run backend/database/schema/15_team_member_user_search_and_default_departments.sql.'
+          };
+        }
+        if (/could not choose the best candidate function/i.test(error.message || '')) {
+          return {
+            success: false,
+            error:
+              'Supabase has overloaded RPC versions for search_cyberlearn_users. ' +
+              'Run: DROP FUNCTION IF EXISTS public.search_cyberlearn_users(UUID, TEXT, INTEGER); ' +
+              'DROP FUNCTION IF EXISTS public.search_cyberlearn_users(TEXT, UUID, INTEGER); ' +
+              'Then re-run migration 15.'
+          };
+        }
+        if (/only company admins can search users/i.test(error.message || '')) {
+          return {
+            success: false,
+            error: 'Current user is not recognized as company admin/owner for this company.'
+          };
+        }
+        throw error;
+      }
+
+      const users = (data || []).map((row) => ({
+        userId: row.user_id,
+        email: row.email,
+        fullName: row.full_name || row.email || row.user_id,
+        avatarUrl: row.avatar_url || null,
+        isCompanyMember: row.is_company_member === true,
+        memberRole: row.member_role || null,
+      }));
+
+      return { success: true, data: users };
+    } catch (error) {
+      console.error('Error searching users for company:', {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        status: error?.status,
+      });
+      return {
+        success: false,
+        error:
+          [
+            error?.message,
+            error?.details,
+            error?.hint,
+          ]
+            .filter(Boolean)
+            .join(' | ') || 'Failed to search users'
       };
     }
   },

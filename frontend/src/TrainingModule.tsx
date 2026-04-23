@@ -1,36 +1,90 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { Id } from "../convex/_generated/dataModel";
 import { ArrowLeft, ArrowRight, CheckCircle, XCircle, Trophy } from "lucide-react";
 import { toast } from "sonner";
+import authService from "./services/authService";
+import {
+  submitTrainingQuiz,
+  startTrainingModule,
+  updateTrainingProgress,
+  getUserTrainingProgress,
+} from "./services/trainingProgressService";
+import { getTrainingModule } from "./services/trainingModuleService";
 
 interface Props {
-  moduleId: Id<"trainingModules">;
+  moduleId: string;
   onBack: () => void;
 }
 
 export function TrainingModule({ moduleId, onBack }: Props) {
-  const module = useQuery(api.training.getModule, { moduleId });
-  const progress = useQuery(api.training.getProgressForModule, { moduleId });
-  const startModule = useMutation(api.training.startModule);
-  const updateProgress = useMutation(api.training.updateProgress);
-  const submitQuiz = useMutation(api.training.submitQuiz);
-
+  const [module, setModule] = useState<any | null>(null);
+  const [progress, setProgress] = useState<any | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
-  const [quizResult, setQuizResult] = useState<{ score: number; passed: boolean } | null>(null);
+  const [quizResult, setQuizResult] = useState<{ score: number; passed: boolean; certificate?: any | null } | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
-    if (progress && progress.status !== "not_started") {
-      setCurrentSlide(progress.currentSlide ?? 0);
-    }
-    startModule({ moduleId });
+    let mounted = true;
+
+    const loadModule = async () => {
+      setLoading(true);
+      setLoadError(null);
+
+      try {
+        const { user } = await authService.getCurrentUser();
+        if (!user) {
+          throw new Error("Sign in to access training modules.");
+        }
+
+        const [loadedModule, loadedProgress] = await Promise.all([
+          getTrainingModule(moduleId),
+          getUserTrainingProgress(user.id, moduleId),
+        ]);
+
+        if (!mounted) return;
+
+        setUserId(user.id);
+        setModule(loadedModule);
+
+        const progressRecord = Array.isArray(loadedProgress) ? loadedProgress[0] : loadedProgress;
+        if (progressRecord) {
+          setProgress(progressRecord);
+          setCurrentSlide(Math.min(progressRecord.currentSlide ?? 0, Math.max((loadedModule?.content?.length ?? 1) - 1, 0)));
+
+          if (progressRecord.status === "completed" && typeof progressRecord.score === "number") {
+            setQuizResult({
+              score: progressRecord.score,
+              passed: progressRecord.score >= Number(loadedModule?.passingScore ?? 70),
+              certificate: null,
+            });
+          }
+        } else {
+          const started = await startTrainingModule(user.id, moduleId);
+          if (!mounted) return;
+          setProgress(started);
+        }
+      } catch (error: any) {
+        if (!mounted) return;
+        setLoadError(error?.message || "Failed to load training module.");
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadModule();
+
+    return () => {
+      mounted = false;
+    };
   }, [moduleId]);
 
-  if (!module) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
@@ -38,15 +92,29 @@ export function TrainingModule({ moduleId, onBack }: Props) {
     );
   }
 
-  const slides = module.content;
+  if (loadError || !module) {
+    return (
+      <div className="bg-red-900/20 border border-red-800 text-red-200 rounded-xl p-4">
+        {loadError || "Training module not found."}
+      </div>
+    );
+  }
+
+  const slides = Array.isArray(module.content) ? module.content : [];
   const slide = slides[currentSlide];
+  if (!slide) {
+    return (
+      <div className="bg-yellow-900/20 border border-yellow-800 text-yellow-200 rounded-xl p-4">
+        This training module has no slides yet.
+      </div>
+    );
+  }
+
   const isLastSlide = currentSlide === slides.length - 1;
-  const quizSlides = slides.filter((s) => s.type === "quiz");
   const quizSlideIndices = slides.reduce<number[]>((acc, s, i) => {
     if (s.type === "quiz") acc.push(i);
     return acc;
   }, []);
-  const currentQuizIndex = quizSlideIndices.indexOf(currentSlide);
 
   const handleNext = async () => {
     if (slide.type === "quiz" && selectedAnswer === null) {
@@ -61,14 +129,22 @@ export function TrainingModule({ moduleId, onBack }: Props) {
     setSelectedAnswer(null);
 
     if (isLastSlide) {
-      // Submit quiz
       const answers = quizSlideIndices.map((idx) => quizAnswers[idx] ?? 0);
-      const result = await submitQuiz({ moduleId, answers });
-      setQuizResult(result);
+      if (!userId) {
+        toast.error("Training session is missing user context.");
+        return;
+      }
+
+      const result = await submitTrainingQuiz(userId, moduleId, answers);
+      setQuizResult({ score: result.score, passed: result.passed, certificate: result.certificate });
+      setProgress(result.progress);
     } else {
       const next = currentSlide + 1;
       setCurrentSlide(next);
-      await updateProgress({ moduleId, currentSlide: next });
+      if (userId) {
+        const updated = await updateTrainingProgress(userId, moduleId, { currentSlide: next });
+        setProgress(updated);
+      }
     }
   };
 
@@ -80,7 +156,7 @@ export function TrainingModule({ moduleId, onBack }: Props) {
     }
   };
 
-  if (quizResult) {
+  if (quizResult && progress?.status === "completed") {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center">
@@ -99,6 +175,13 @@ export function TrainingModule({ moduleId, onBack }: Props) {
               ? `Excellent work! You scored ${quizResult.score}% and passed the module.`
               : `You scored ${quizResult.score}%. You need ${module.passingScore}% to pass. Try again!`}
           </p>
+          {quizResult.passed && (
+            <div className="mb-6 text-sm text-indigo-300 bg-indigo-500/10 border border-indigo-800 rounded-lg px-4 py-3">
+              {quizResult.certificate?.certificateNumber
+                ? `Certificate issued: ${quizResult.certificate.certificateNumber}`
+                : "Certificate is being issued for this completed module."}
+            </div>
+          )}
           <div className="w-full bg-gray-800 rounded-full h-4 mb-6">
             <div
               className={`h-4 rounded-full transition-all duration-1000 ${quizResult.passed ? "bg-green-500" : "bg-red-500"}`}

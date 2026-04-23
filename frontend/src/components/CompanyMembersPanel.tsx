@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { companyService, accessControlService } from '../services/companyService';
 import { toast } from 'sonner';
-import { Users, Plus, Trash2, Loader, Mail, AlertCircle, Building2, UserPlus } from 'lucide-react';
+import { Users, Plus, Trash2, Loader, Mail, AlertCircle, Building2, UserPlus, Search } from 'lucide-react';
 
 export const CompanyMembersPanel = ({ companyId, onMembersChanged }) => {
   const [members, setMembers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAddingUser, setIsAddingUser] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState('');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState('member');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -21,6 +24,26 @@ export const CompanyMembersPanel = ({ companyId, onMembersChanged }) => {
     };
     loadData();
   }, [companyId]);
+
+  useEffect(() => {
+    if (!isAdmin || !companyId) return;
+
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      const result = await companyService.searchUsersForCompany(companyId, userSearchQuery, 25);
+      if (result.success) {
+        setSearchResults(result.data || []);
+      } else {
+        setSearchResults([]);
+        if (userSearchQuery.trim().length > 0) {
+          toast.error(result.error || 'Failed to search users');
+        }
+      }
+      setSearchLoading(false);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [isAdmin, companyId, userSearchQuery]);
 
   const checkAdminStatus = async () => {
     const result = await companyService.isUserCompanyAdmin(companyId);
@@ -47,29 +70,54 @@ export const CompanyMembersPanel = ({ companyId, onMembersChanged }) => {
         .order('name');
 
       if (error) throw error;
-      setDepartments(data || []);
+      let departmentRows = data || [];
+
+      if (departmentRows.length === 0) {
+        const bootstrapResult = await companyService.ensureCompanyDefaultDepartments(companyId);
+        if (!bootstrapResult.success) {
+          throw new Error(bootstrapResult.error || 'Failed to bootstrap default departments');
+        }
+
+        const { data: refreshedDepartments, error: refreshError } = await supabase
+          .from('departments')
+          .select('id, name')
+          .eq('company_id', companyId)
+          .order('name');
+
+        if (refreshError) throw refreshError;
+
+        departmentRows = refreshedDepartments || [];
+      }
+
+      setDepartments(departmentRows);
     } catch (error) {
       console.error('Error loading departments:', error);
+      toast.error(error.message || 'Failed to load departments');
     }
   };
 
   const handleAddUser = async (e) => {
     e.preventDefault();
 
-    if (!newUserEmail.trim()) {
-      toast.error('Please enter an email address');
+    if (!selectedUser) {
+      toast.error('Search and select a user first');
+      return;
+    }
+
+    if (selectedRole === 'member' && !selectedDepartment) {
+      toast.error('Members must be assigned to a department');
       return;
     }
 
     setIsAddingUser(true);
     const result = await companyService.addUserToCompany(
       companyId,
-      newUserEmail,
+      selectedUser,
       selectedRole
     );
 
     if (result.success) {
-      if (selectedDepartment && result.userId) {
+      if (selectedRole === 'member' && selectedDepartment && result.userId) {
         const assignmentResult = await accessControlService.assignUserToDepartment(
           result.userId,
           selectedDepartment
@@ -84,11 +132,30 @@ export const CompanyMembersPanel = ({ companyId, onMembersChanged }) => {
         }
       }
 
-      toast.success(selectedDepartment ? 'User added and assigned to department!' : 'User added successfully!');
-      setNewUserEmail('');
+      if (result.alreadyMember) {
+        if (result.previousRole && result.previousRole !== selectedRole) {
+          toast.success(
+            selectedRole === 'member'
+              ? 'Existing member role updated and department assigned.'
+              : 'Existing member role updated successfully.'
+          );
+        } else {
+          toast.success(
+            selectedRole === 'member'
+              ? 'Existing member assigned to selected department.'
+              : 'User is already a member. Details refreshed.'
+          );
+        }
+      } else {
+        toast.success(selectedRole === 'member' ? 'User added and assigned to department!' : 'User added successfully!');
+      }
+
+      setSelectedUser(null);
+      setUserSearchQuery('');
       setSelectedRole('member');
       setSelectedDepartment('');
       await loadMembers();
+      await loadDepartments();
       await onMembersChanged?.();
     } else {
       toast.error(result.error || 'Failed to add user');
@@ -143,15 +210,70 @@ export const CompanyMembersPanel = ({ companyId, onMembersChanged }) => {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
               Add Existing CyberLearn User
             </label>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={newUserEmail}
-                onChange={(e) => setNewUserEmail(e.target.value)}
-                placeholder="user@example.com"
-                disabled={isAddingUser}
-                className="flex-1 px-3 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 disabled:opacity-50"
-              />
+            <div className="flex gap-2 items-start">
+              <div className="flex-1 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={userSearchQuery}
+                    onChange={(e) => {
+                      setUserSearchQuery(e.target.value);
+                      setSelectedUser(null);
+                    }}
+                    placeholder="Search by name or email..."
+                    disabled={isAddingUser}
+                    className="w-full pl-10 pr-3 py-2 border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="max-h-48 overflow-y-auto border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 divide-y dark:divide-slate-700">
+                  {searchLoading ? (
+                    <div className="p-3 text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Searching users...
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="p-3 text-sm text-slate-500 dark:text-slate-400">
+                      {userSearchQuery.trim()
+                        ? 'No users found for this search.'
+                        : 'Type a name or email to search all CyberLearn users.'}
+                    </div>
+                  ) : (
+                    searchResults.map((user) => (
+                      <button
+                        key={user.userId}
+                        type="button"
+                        onClick={() => setSelectedUser(user)}
+                        className={`w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
+                          selectedUser?.userId === user.userId ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                              {user.fullName || user.email}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {user.isCompanyMember && (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                                Already member{user.memberRole ? ` (${user.memberRole})` : ''}
+                              </span>
+                            )}
+                            {selectedUser?.userId === user.userId && (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+                                Selected
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
@@ -163,7 +285,7 @@ export const CompanyMembersPanel = ({ companyId, onMembersChanged }) => {
               </select>
               <button
                 type="submit"
-                disabled={isAddingUser}
+                disabled={isAddingUser || !selectedUser || (selectedRole === 'member' && !selectedDepartment)}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
               >
                 {isAddingUser ? (
@@ -179,6 +301,11 @@ export const CompanyMembersPanel = ({ companyId, onMembersChanged }) => {
                 )}
               </button>
             </div>
+            {selectedUser && (
+              <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 text-sm text-indigo-800 dark:text-indigo-300">
+                Selected user: <span className="font-medium">{selectedUser.fullName || selectedUser.email}</span> ({selectedUser.email})
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
               <div>
                 <label className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2 mb-1">

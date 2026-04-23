@@ -3,6 +3,117 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // Singleton instance of Supabase client
 let supabaseInstance: SupabaseClient | null = null;
 
+const SUPABASE_CONFIG_ERROR =
+  '❌ [Supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in environment variables';
+
+function createSupabaseConfigError(): Error {
+  return new Error(SUPABASE_CONFIG_ERROR);
+}
+
+function createNoopChain(): any {
+  const chain: Record<string | symbol, any> = {};
+
+  const proxy = new Proxy(chain, {
+    get(_target, prop) {
+      if (prop === 'then') {
+        return (onFulfilled?: (value: { data: null; error: Error }) => unknown, onRejected?: (reason: unknown) => unknown) =>
+          Promise.resolve({ data: null, error: createSupabaseConfigError() }).then(onFulfilled, onRejected);
+      }
+
+      if (prop === 'catch') {
+        return (onRejected?: (reason: unknown) => unknown) =>
+          Promise.resolve({ data: null, error: createSupabaseConfigError() }).catch(onRejected);
+      }
+
+      if (prop === 'finally') {
+        return (onFinally?: () => void) =>
+          Promise.resolve({ data: null, error: createSupabaseConfigError() }).finally(onFinally);
+      }
+
+      return (..._args: unknown[]) => proxy;
+    },
+  });
+
+  return proxy;
+}
+
+function createNoopSupabaseClient(): SupabaseClient {
+  const noopChain = createNoopChain();
+
+  return {
+    auth: {
+      async signUp() {
+        return { data: null, error: createSupabaseConfigError() };
+      },
+      async signInWithPassword() {
+        return { data: null, error: createSupabaseConfigError() };
+      },
+      async signInWithOAuth() {
+        return { data: null, error: createSupabaseConfigError() };
+      },
+      async signInAnonymously() {
+        return { data: null, error: createSupabaseConfigError() };
+      },
+      async signOut() {
+        return { error: createSupabaseConfigError() };
+      },
+      async resetPasswordForEmail() {
+        return { data: null, error: createSupabaseConfigError() };
+      },
+      async updateUser() {
+        return { data: null, error: createSupabaseConfigError() };
+      },
+      async verifyOtp() {
+        return { data: null, error: createSupabaseConfigError() };
+      },
+      async getSession() {
+        return { data: { session: null }, error: createSupabaseConfigError() };
+      },
+      async getUser() {
+        return { data: { user: null }, error: createSupabaseConfigError() };
+      },
+      onAuthStateChange(callback: (event: string, session: null) => void) {
+        queueMicrotask(() => callback('SIGNED_OUT', null));
+
+        return {
+          data: { subscription: { unsubscribe: () => undefined } },
+          error: null,
+        };
+      },
+    },
+    from() {
+      return noopChain;
+    },
+    rpc() {
+      return Promise.resolve({ data: null, error: createSupabaseConfigError() });
+    },
+    channel() {
+      return noopChain;
+    },
+    removeChannel() {
+      return Promise.resolve();
+    },
+    getChannels() {
+      return [];
+    },
+    storage: {
+      from() {
+        return noopChain;
+      },
+    },
+    realtime: {
+      setAuth: async () => ({ error: createSupabaseConfigError() }),
+    },
+    functions: {
+      invoke: async () => ({ data: null, error: createSupabaseConfigError() }),
+    },
+    schemas: {},
+    rest: {} as any,
+    authStateChangeEmitters: {},
+    ...noopChain,
+  } as unknown as SupabaseClient;
+}
+
 /**
  * Initialize Supabase client as a singleton
  * Ensures only one GoTrueClient instance exists across the app
@@ -16,16 +127,11 @@ export function initSupabaseClient(): SupabaseClient {
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   // Validation
-  if (!supabaseUrl) {
-    const msg = '❌ [Supabase] Missing VITE_SUPABASE_URL in environment variables';
-    console.error(msg);
-    throw new Error(msg);
-  }
-  
-  if (!supabaseAnonKey) {
-    const msg = '❌ [Supabase] Missing VITE_SUPABASE_ANON_KEY in environment variables';
-    console.error(msg);
-    throw new Error(msg);
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error(SUPABASE_CONFIG_ERROR);
+    console.warn('ℹ️ [Supabase] Create frontend/.env.local from frontend/.env.example and add your real credentials.');
+    supabaseInstance = createNoopSupabaseClient();
+    return supabaseInstance;
   }
 
   try {
@@ -49,7 +155,8 @@ export function initSupabaseClient(): SupabaseClient {
     return supabaseInstance;
   } catch (err) {
     console.error('❌ [Supabase] Failed to initialize client:', err);
-    throw err;
+    supabaseInstance = createNoopSupabaseClient();
+    return supabaseInstance;
   }
 }
 

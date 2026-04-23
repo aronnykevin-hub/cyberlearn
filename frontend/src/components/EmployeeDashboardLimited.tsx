@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, AlertTriangle, Award, BarChart3, Loader } from 'lucide-react';
-import { permissionService } from '../services/permissionService';
+import { BookOpen, AlertTriangle, Award, BarChart3, Loader, ArrowLeft, PlayCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
+import { TrainingList } from '../TrainingList';
 
 export const EmployeeDashboardLimited = () => {
   const [stats, setStats] = useState({
@@ -14,6 +14,7 @@ export const EmployeeDashboardLimited = () => {
   const [departmentInfo, setDepartmentInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [activeView, setActiveView] = useState<'overview' | 'training'>('overview');
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,7 +51,8 @@ export const EmployeeDashboardLimited = () => {
           const { data: modules, count: moduleCount } = await supabase
             .from('training_modules')
             .select('id', { count: 'exact' })
-            .eq('department_id', profile.department_id);
+            .eq('is_active', true)
+            .or(`target_department_id.is.null,target_department_id.eq.${profile.department_id}`);
 
           // Get completed modules
           const { data: completed, count: completedCount } = await supabase
@@ -96,6 +98,27 @@ export const EmployeeDashboardLimited = () => {
           <Loader className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-2" />
           <p className="text-slate-600 dark:text-slate-400">Loading your dashboard...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (activeView === 'training') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Training Modules</h1>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">Complete each module quiz to finish your training.</p>
+          </div>
+          <button
+            onClick={() => setActiveView('overview')}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+        </div>
+        <TrainingList />
       </div>
     );
   }
@@ -181,6 +204,22 @@ export const EmployeeDashboardLimited = () => {
             </div>
           );
         })}
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-semibold text-slate-900 dark:text-white">Start Learning</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Open your assigned modules and complete the quiz in each one.</p>
+          </div>
+          <button
+            onClick={() => setActiveView('training')}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <PlayCircle className="w-4 h-4" />
+            Open Training
+          </button>
+        </div>
       </div>
 
       {/* Available Features */}

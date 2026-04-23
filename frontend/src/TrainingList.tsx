@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { BookOpen, Clock, Star, CheckCircle, Play, RotateCcw } from "lucide-react";
-import { Id } from "../convex/_generated/dataModel";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BookOpen, Clock, Star, CheckCircle, Play, RotateCcw, Loader2 } from "lucide-react";
 import { TrainingModule } from "./TrainingModule";
+import authService from "./services/authService";
+import { getTrainingModules } from "./services/trainingModuleService";
+import { getUserTrainingProgress } from "./services/trainingProgressService";
 
 const categoryColors: Record<string, string> = {
   phishing: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -30,18 +30,83 @@ const categoryEmojis: Record<string, string> = {
 };
 
 export function TrainingList() {
-  const modules = useQuery(api.training.listModules) ?? [];
-  const myProgress = useQuery(api.training.getMyProgress) ?? [];
-  const [activeModuleId, setActiveModuleId] = useState<Id<"trainingModules"> | null>(null);
+  const [modules, setModules] = useState<any[]>([]);
+  const [myProgress, setMyProgress] = useState<any[]>([]);
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const progressMap = new Map(myProgress.map((p) => [p.moduleId, p]));
+  const loadTrainingData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { user } = await authService.getCurrentUser();
+      if (!user) {
+        throw new Error("Sign in to access training modules.");
+      }
+
+      const [moduleRows, progressRows] = await Promise.all([
+        getTrainingModules(),
+        getUserTrainingProgress(user.id),
+      ]);
+
+      setModules(moduleRows || []);
+      setMyProgress(Array.isArray(progressRows) ? progressRows : progressRows ? [progressRows] : []);
+    } catch (loadError: any) {
+      setError(loadError?.message || "Failed to load training modules.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const runLoad = async () => {
+      if (!mounted) return;
+      await loadTrainingData();
+    };
+
+    runLoad();
+
+    return () => {
+      mounted = false;
+    };
+  }, [loadTrainingData]);
+
+  const progressMap = useMemo(() => {
+    return new Map(myProgress.map((p) => [p.moduleId, p]));
+  }, [myProgress]);
 
   if (activeModuleId) {
     return (
       <TrainingModule
         moduleId={activeModuleId}
-        onBack={() => setActiveModuleId(null)}
+        onBack={() => {
+          setActiveModuleId(null);
+          void loadTrainingData();
+        }}
       />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex items-center gap-3 text-gray-400">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Loading training modules...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-900/20 border border-red-800 text-red-200 rounded-xl p-4">
+        {error}
+      </div>
     );
   }
 
@@ -54,11 +119,11 @@ export function TrainingList() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {modules.map((module) => {
-          const progress = progressMap.get(module._id);
+          const progress = progressMap.get(module.id);
           const status = progress?.status ?? "not_started";
           return (
             <div
-              key={module._id}
+              key={module.id}
               className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-indigo-700 transition-all group"
             >
               <div className="flex items-start justify-between mb-3">
@@ -91,7 +156,7 @@ export function TrainingList() {
                 </span>
                 <span className="flex items-center gap-1">
                   <BookOpen size={12} />
-                  {module.content.length} slides
+                  {Array.isArray(module.content) ? module.content.length : 0} slides
                 </span>
               </div>
 
@@ -99,12 +164,12 @@ export function TrainingList() {
                 <div className="mb-3">
                   <div className="flex justify-between text-xs text-gray-500 mb-1">
                     <span>Progress</span>
-                    <span>{progress?.currentSlide ?? 0}/{module.content.length}</span>
+                    <span>{progress?.currentSlide ?? 0}/{Array.isArray(module.content) ? module.content.length : 0}</span>
                   </div>
                   <div className="w-full bg-gray-800 rounded-full h-1.5">
                     <div
                       className="bg-indigo-500 h-1.5 rounded-full"
-                      style={{ width: `${((progress?.currentSlide ?? 0) / module.content.length) * 100}%` }}
+                      style={{ width: `${Array.isArray(module.content) && module.content.length > 0 ? ((progress?.currentSlide ?? 0) / module.content.length) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -123,7 +188,7 @@ export function TrainingList() {
               )}
 
               <button
-                onClick={() => setActiveModuleId(module._id)}
+                onClick={() => setActiveModuleId(module.id)}
                 className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   status === "completed"
                     ? "bg-green-900/30 text-green-400 border border-green-800 hover:bg-green-900/50"
@@ -144,6 +209,12 @@ export function TrainingList() {
           );
         })}
       </div>
+
+      {modules.length === 0 && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center text-gray-400">
+          No training modules are currently available.
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Users, CheckCircle, Clock, TrendingUp, Award } from "lucide-react";
+import authService from "./services/authService";
+import { getTrainingModules } from "./services/trainingModuleService";
+import { getTrainingStatistics } from "./services/trainingProgressService";
 
 const categoryEmojis: Record<string, string> = {
   phishing: "🎣", password: "🔐", social_engineering: "🎭",
@@ -9,9 +10,53 @@ const categoryEmojis: Record<string, string> = {
 };
 
 export function AdminTraining() {
-  const modules = useQuery(api.training.listModules) ?? [];
-  const allProgress = useQuery(api.training.getAllProgress) ?? [];
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  const [modules, setModules] = useState<any[]>([]);
+  const [allProgress, setAllProgress] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadAdminTraining = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { user } = await authService.getCurrentUser();
+        if (!user) {
+          throw new Error('Sign in to view training analytics.');
+        }
+
+        const [moduleRows, progressRows] = await Promise.all([
+          getTrainingModules(),
+          getTrainingStatistics(),
+        ]);
+
+        if (!mounted) return;
+
+        setModules(moduleRows || []);
+        setAllProgress(progressRows || []);
+      } catch (loadError: any) {
+        if (!mounted) return;
+        setError(loadError?.message || 'Failed to load training analytics.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadAdminTraining();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const overallCompleted = useMemo(() => allProgress.filter((p) => p.status === 'completed').length, [allProgress]);
+  const overallInProgress = useMemo(() => allProgress.filter((p) => p.status === 'in_progress').length, [allProgress]);
 
   const getModuleStats = (moduleId: string) => {
     const progress = allProgress.filter((p) => p.moduleId === moduleId);
@@ -27,8 +72,13 @@ export function AdminTraining() {
     ? allProgress.filter((p) => p.moduleId === selectedModule)
     : [];
 
-  const overallCompleted = allProgress.filter((p) => p.status === "completed").length;
-  const overallInProgress = allProgress.filter((p) => p.status === "in_progress").length;
+  if (loading) {
+    return <div className="text-gray-400">Loading training analytics...</div>;
+  }
+
+  if (error) {
+    return <div className="bg-red-900/20 border border-red-800 text-red-200 rounded-xl p-4">{error}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -73,17 +123,17 @@ export function AdminTraining() {
       {/* Module Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {modules.map((module) => {
-          const stats = getModuleStats(module._id);
+          const stats = getModuleStats(module.id);
           const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
-          const isSelected = selectedModule === module._id;
+          const isSelected = selectedModule === module.id;
 
           return (
             <div
-              key={module._id}
+              key={module.id}
               className={`bg-gray-900 border rounded-xl p-5 cursor-pointer transition-all ${
                 isSelected ? "border-indigo-600" : "border-gray-800 hover:border-gray-700"
               }`}
-              onClick={() => setSelectedModule(isSelected ? null : module._id)}
+              onClick={() => setSelectedModule(isSelected ? null : module.id)}
             >
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-2xl">{categoryEmojis[module.category] ?? "📚"}</span>
@@ -128,8 +178,8 @@ export function AdminTraining() {
                   </p>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {selectedModuleProgress.map((p) => (
-                      <div key={p._id} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-400 truncate flex-1">{p.userName ?? p.userEmail ?? "User"}</span>
+                      <div key={p.id ?? `${p.moduleId}-${p.userId}`} className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400 truncate flex-1">{p.userName ?? p.userEmail ?? "User"}</span>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {p.score !== undefined && (
                             <span className={`font-medium ${p.score >= module.passingScore ? "text-green-400" : "text-red-400"}`}>
@@ -171,7 +221,7 @@ export function AdminTraining() {
               .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
               .slice(0, 5)
               .map((p, i) => (
-                <div key={p._id} className="flex items-center gap-3 text-sm">
+                <div key={p.id ?? `${p.moduleId}-${p.userId}-${i}`} className="flex items-center gap-3 text-sm">
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                     i === 0 ? "bg-yellow-500 text-black" :
                     i === 1 ? "bg-gray-400 text-black" :
