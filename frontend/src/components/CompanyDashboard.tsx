@@ -26,6 +26,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [activePanel, setActivePanel] = useState('members');
   const [trainingPanel, setTrainingPanel] = useState<'learn' | 'analytics'>('learn');
+  const [activeServiceTab, setActiveServiceTab] = useState(0);
   const [initializingTrainingModules, setInitializingTrainingModules] = useState(false);
   const [hasAttemptedAutoInit, setHasAttemptedAutoInit] = useState(false);
   const managementSectionRef = useRef(null);
@@ -239,7 +240,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     {
       number: 3,
       title: 'Training Modules',
-      description: 'Learn and deploy custom training content',
+      description: 'Create department-based training content',
       icon: BookOpen,
       color: 'from-green-500 to-green-600',
       stat: stats.trainingModules,
@@ -249,14 +250,14 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     },
     {
       number: 4,
-      title: 'Phishing Simulations',
-      description: 'Test employee awareness with phishing campaigns',
+      title: 'Security Drills',
+      description: 'Review simulation readiness and vigilance tracking',
       icon: AlertTriangle,
       color: 'from-orange-500 to-orange-600',
       stat: stats.phishingCampaigns,
       statLabel: 'Campaigns',
       action: () => navigateTo('/phishing-campaigns'),
-      actionText: 'Launch'
+      actionText: 'Review'
     },
     {
       number: 5,
@@ -372,115 +373,61 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
             })}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                number: 1,
-                title: 'Company Profile',
-                description: 'View and update your profile details',
-                icon: Settings,
-                color: 'from-blue-500 to-blue-600',
-                stat: stats.departments,
-                statLabel: 'Departments',
-                action: () => openTab('profile'),
-                actionText: 'Open profile'
-              },
-              {
-                number: 2,
-                title: 'Employee Management',
-                description: 'Add, assign roles, and manage employees',
-                icon: Users,
-                color: 'from-purple-500 to-purple-600',
-                stat: stats.employees,
-                statLabel: 'Employees',
-                action: () => openTab('team'),
-                actionText: 'Manage'
-              },
-              {
-                number: 3,
-                title: 'Training Modules',
-                description: 'Learn and deploy custom training content',
-                icon: BookOpen,
-                color: 'from-green-500 to-green-600',
-                stat: stats.trainingModules,
-                statLabel: 'Modules',
-                action: () => openTab('training'),
-                actionText: 'Open'
-              },
-              {
-                number: 4,
-                title: 'Security Drills',
-                description: 'Review simulation readiness and awareness tracking',
-                icon: AlertTriangle,
-                color: 'from-orange-500 to-orange-600',
-                stat: stats.phishingCampaigns,
-                statLabel: 'Campaigns',
-                action: () => {
-                  setTrainingPanel('analytics');
-                  openTab('training');
-                },
-                actionText: 'Review'
-              },
-              {
-                number: 5,
-                title: 'Threat Reports',
-                description: 'Monitor and respond to threat reports',
-                icon: Zap,
-                color: 'from-red-500 to-red-600',
-                stat: stats.threatReports,
-                statLabel: 'Reports',
-                action: () => openTab('reports'),
-                actionText: 'Review'
-              },
-              {
-                number: 6,
-                title: 'Certificates',
-                description: 'Issue and track digital certificates',
-                icon: Award,
-                color: 'from-indigo-500 to-indigo-600',
-                stat: stats.certificates,
-                statLabel: 'Issued',
-                action: () => openTab('certificates'),
-                actionText: 'View'
-              }
-            ].map((service) => {
-              const Icon = service.icon;
-              return (
-                <div
-                  key={service.number}
-                  className="overflow-hidden rounded-3xl border border-slate-200 bg-white transition-all hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
-                >
-                  <div className={`relative h-24 bg-gradient-to-br ${service.color} overflow-hidden`}>
-                    <div className="absolute inset-0 opacity-10">
-                      <Icon className="absolute right-0 top-0 h-full w-full translate-x-1/3 -translate-y-1/3 transform" />
-                    </div>
-                    <div className="relative flex h-full items-end justify-between p-6">
-                      <div>
-                        <p className="mb-1 text-xs font-semibold text-white/80">Service {service.number}</p>
-                        <h3 className="font-bold text-white">{service.title}</h3>
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Services & Workspace</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-max">
+              {services.map((service, idx) => {
+                const Icon = service.icon;
+                const isWide = idx === 1 || idx === 4;
+                const isTall = idx === 0 || idx === 2;
+                
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setActiveServiceTab(idx)}
+                    className={`group relative overflow-hidden rounded-3xl border border-slate-200 bg-white transition-all cursor-pointer hover:shadow-xl dark:border-slate-700 dark:bg-slate-900 ${
+                      activeServiceTab === idx ? 'ring-2 ring-indigo-600 dark:ring-indigo-400' : ''
+                    } ${isWide ? 'lg:col-span-2' : ''} ${isTall ? 'md:row-span-2' : ''}`}
+                  >
+                    {/* Background Gradient Header */}
+                    <div className={`relative h-32 bg-gradient-to-br ${service.color} overflow-hidden group-hover:scale-105 transition-transform`}>
+                      <div className="absolute inset-0 opacity-20">
+                        <Icon className="absolute -right-4 -top-4 h-24 w-24" />
                       </div>
-                      <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
-                        <Icon className="h-5 w-5 text-white" />
+                      <div className="relative flex h-full items-end p-4">
+                        <div>
+                          <p className="text-xs font-semibold text-white/70 uppercase tracking-wider">Service {idx + 1}</p>
+                          <h3 className="text-lg font-bold text-white">{service.title}</h3>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="p-6">
-                    <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">{service.description}</p>
-                    <div className="mb-6 rounded-2xl bg-slate-50 p-3 text-center dark:bg-slate-800">
-                      <p className="text-2xl font-bold text-slate-900 dark:text-white">{service.stat}</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">{service.statLabel}</p>
+                    {/* Content Area */}
+                    <div className="p-6 space-y-4">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{service.description}</p>
+                      
+                      <div className="rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 p-4 text-center">
+                        <p className="text-3xl font-bold text-slate-900 dark:text-white">{service.stat}</p>
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-1">{service.statLabel}</p>
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          service.action();
+                        }}
+                        className={`w-full rounded-xl bg-gradient-to-r ${service.color} px-4 py-3 text-sm font-semibold text-white transition-all hover:shadow-lg active:scale-95`}
+                      >
+                        {service.actionText}
+                      </button>
                     </div>
-                    <button
-                      onClick={service.action}
-                      className={`w-full rounded-xl bg-gradient-to-r ${service.color} px-4 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg`}
-                    >
-                      {service.actionText}
-                    </button>
+
+                    {/* Hover Indicator */}
+                    <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-white/20 to-transparent rounded-bl-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
           <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">

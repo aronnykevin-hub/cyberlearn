@@ -208,6 +208,7 @@ export async function getTrainingStatistics() {
       `
       id,
       module_id,
+      user_id,
       status,
       score,
       current_slide,
@@ -219,10 +220,8 @@ export async function getTrainingStatistics() {
         passing_score
       ),
       users!inner (
-        email
-      ),
-      user_profiles!left (
-        full_name
+        email,
+        id
       )
     `
     )
@@ -232,9 +231,24 @@ export async function getTrainingStatistics() {
     throw new Error(error.message);
   }
 
+  // Then fetch user profiles in a separate query to avoid relationship issues
+  const userIds = [...new Set((data || []).map(row => row.user_id))];
+  let userProfiles = {};
+  
+  if (userIds.length > 0) {
+    const { data: profiles, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('user_id, full_name')
+      .in('user_id', userIds);
+    
+    if (!profileError && profiles) {
+      userProfiles = Object.fromEntries(profiles.map(p => [p.user_id, p.full_name]));
+    }
+  }
+
   return (data || []).map((row) => ({
     ...normalizeTrainingProgress(row),
-    userName: row.user_profiles?.full_name || row.users?.email || 'User',
+    userName: userProfiles[row.user_id] || row.users?.email || 'User',
     userEmail: row.users?.email || null,
     moduleTitle: row.training_modules?.title || 'Training Module',
     moduleCategory: row.training_modules?.category || null,

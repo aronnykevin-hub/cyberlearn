@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { accessControlService, companyService } from '../services/companyService';
 import { toast } from 'sonner';
-import { Users, UserCheck, AlertCircle, Loader, Search } from 'lucide-react';
+import { Users, UserCheck, AlertCircle, Loader, Search, Plus, Edit, Trash2, X } from 'lucide-react';
 
 export const AdminUserAssignment = ({ companyId, onAssignmentComplete }) => {
   const [users, setUsers] = useState([]);
@@ -12,6 +12,12 @@ export const AdminUserAssignment = ({ companyId, onAssignmentComplete }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [assigning, setAssigning] = useState(false);
+  
+  // Department management states
+  const [showDeptForm, setShowDeptForm] = useState(false);
+  const [editingDept, setEditingDept] = useState(null);
+  const [newDeptName, setNewDeptName] = useState('');
+  const [savingDept, setSavingDept] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -51,6 +57,83 @@ export const AdminUserAssignment = ({ companyId, onAssignmentComplete }) => {
     }
 
     setLoading(false);
+  };
+
+  const handleAddDepartment = async () => {
+    if (!newDeptName.trim()) {
+      toast.error('Department name is required');
+      return;
+    }
+
+    setSavingDept(true);
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .insert({
+          company_id: companyId,
+          name: newDeptName.trim(),
+        })
+        .select();
+
+      if (error) throw error;
+
+      setDepartments([...departments, data[0]]);
+      setNewDeptName('');
+      setShowDeptForm(false);
+      toast.success('Department created successfully!');
+    } catch (error) {
+      console.error('Error creating department:', error);
+      toast.error('Failed to create department');
+    } finally {
+      setSavingDept(false);
+    }
+  };
+
+  const handleEditDepartment = async () => {
+    if (!newDeptName.trim()) {
+      toast.error('Department name is required');
+      return;
+    }
+
+    setSavingDept(true);
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .update({ name: newDeptName.trim() })
+        .eq('id', editingDept.id);
+
+      if (error) throw error;
+
+      setDepartments(departments.map(d => d.id === editingDept.id ? { ...d, name: newDeptName.trim() } : d));
+      setNewDeptName('');
+      setEditingDept(null);
+      toast.success('Department updated successfully!');
+    } catch (error) {
+      console.error('Error updating department:', error);
+      toast.error('Failed to update department');
+    } finally {
+      setSavingDept(false);
+    }
+  };
+
+  const handleDeleteDepartment = async (deptId) => {
+    if (!window.confirm('Are you sure you want to delete this department?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .delete()
+        .eq('id', deptId);
+
+      if (error) throw error;
+
+      setDepartments(departments.filter(d => d.id !== deptId));
+      if (selectedDepartment === deptId) setSelectedDepartment('');
+      toast.success('Department deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      toast.error('Failed to delete department');
+    }
   };
 
   const filteredUsers = users.filter((user) => {
@@ -181,10 +264,24 @@ export const AdminUserAssignment = ({ companyId, onAssignmentComplete }) => {
         )}
 
         {departments.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Select Department
-            </label>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Select Department
+              </label>
+              <button
+                onClick={() => {
+                  setShowDeptForm(true);
+                  setEditingDept(null);
+                  setNewDeptName('');
+                }}
+                className="flex items-center gap-1 text-xs px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Add Department
+              </button>
+            </div>
+
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
@@ -197,6 +294,92 @@ export const AdminUserAssignment = ({ companyId, onAssignmentComplete }) => {
                 </option>
               ))}
             </select>
+
+            {/* Department Management UI */}
+            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg space-y-3 border border-slate-200 dark:border-slate-700">
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Manage Departments</h4>
+              
+              {/* Add/Edit Department Form */}
+              {showDeptForm && (
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-medium text-slot-900 dark:text-white">
+                      {editingDept ? 'Edit Department' : 'Add New Department'}
+                    </h5>
+                    <button
+                      onClick={() => {
+                        setShowDeptForm(false);
+                        setEditingDept(null);
+                        setNewDeptName('');
+                      }}
+                      className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Department name"
+                    value={newDeptName}
+                    onChange={(e) => setNewDeptName(e.target.value)}
+                    className="w-full px-3 py-2 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={editingDept ? handleEditDepartment : handleAddDepartment}
+                      disabled={savingDept}
+                      className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors font-medium"
+                    >
+                      {savingDept && <Loader className="w-4 h-4 animate-spin" />}
+                      {editingDept ? 'Update' : 'Create'} Department
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDeptForm(false);
+                        setEditingDept(null);
+                        setNewDeptName('');
+                      }}
+                      className="px-3 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Departments List */}
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {departments.length === 0 ? (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 italic">No departments yet</p>
+                ) : (
+                  departments.map((dept) => (
+                    <div key={dept.id} className="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                      <span className="text-sm font-medium text-slate-900 dark:text-white">{dept.name}</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingDept(dept);
+                            setNewDeptName(dept.name);
+                            setShowDeptForm(true);
+                          }}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                          title="Edit department"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDepartment(dept.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="Delete department"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 
