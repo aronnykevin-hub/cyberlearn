@@ -7,8 +7,16 @@ import EmployeeReportsPanel from './EmployeeReportsPanel';
 import DashboardTabs from './DashboardTabs';
 import CertificatesPanel from './CertificatesPanel';
 import MyProfilePanel from './MyProfilePanel';
+import {
+  getCyberlearnHistoryState,
+  pushCyberlearnHistoryState,
+  replaceCyberlearnHistoryState,
+} from '../lib/navigationHistory';
 
 type DashboardView = 'overview' | 'training' | 'reports' | 'certificates' | 'profile';
+type EmployeeHistoryState = {
+  view: DashboardView;
+};
 
 export const EmployeeDashboardLimited = () => {
   const [stats, setStats] = useState({
@@ -23,7 +31,14 @@ export const EmployeeDashboardLimited = () => {
   const [user, setUser] = useState<any | null>(null);
   const [activeView, setActiveView] = useState<DashboardView>('overview');
 
-  const openView = (view: DashboardView) => {
+  const openView = (view: DashboardView, historyMode: 'push' | 'replace' = 'push') => {
+    const nextState: EmployeeHistoryState = { view };
+    if (historyMode === 'push') {
+      pushCyberlearnHistoryState(nextState);
+    } else {
+      replaceCyberlearnHistoryState(nextState);
+    }
+
     setActiveView(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -128,6 +143,21 @@ export const EmployeeDashboardLimited = () => {
   }, []);
 
   useEffect(() => {
+    replaceCyberlearnHistoryState<EmployeeHistoryState>({ view: 'overview' });
+
+    const handlePopState = () => {
+      const state = getCyberlearnHistoryState<EmployeeHistoryState>();
+      setActiveView(state?.view ?? 'overview');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent).detail || {};
       const target = detail.target;
@@ -194,7 +224,7 @@ export const EmployeeDashboardLimited = () => {
             </p>
           </div>
           <button
-            onClick={() => openView('overview')}
+            onClick={() => window.history.back()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -216,7 +246,7 @@ export const EmployeeDashboardLimited = () => {
             <p className="text-slate-600 dark:text-slate-400 text-sm">Submit new reports and track admin replies.</p>
           </div>
           <button
-            onClick={() => openView('overview')}
+            onClick={() => window.history.back()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -238,7 +268,7 @@ export const EmployeeDashboardLimited = () => {
             <p className="text-slate-600 dark:text-slate-400 text-sm">All of your issued training certificates from Supabase.</p>
           </div>
           <button
-            onClick={() => openView('overview')}
+            onClick={() => window.history.back()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -260,7 +290,7 @@ export const EmployeeDashboardLimited = () => {
             <p className="text-slate-600 dark:text-slate-400 text-sm">Keep your account details and contact information current.</p>
           </div>
           <button
-            onClick={() => openView('overview')}
+            onClick={() => window.history.back()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />

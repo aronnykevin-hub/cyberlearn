@@ -29,6 +29,13 @@ function normalizeCertificate(certificate) {
   };
 }
 
+function createCertificateNumber() {
+  const randomPart =
+    globalThis.crypto?.randomUUID?.().slice(0, 8) ||
+    Math.random().toString(36).slice(2, 10);
+  return `CERT-${new Date().toISOString().slice(0, 10)}-${randomPart.toUpperCase()}`;
+}
+
 async function getLatestCertificateForModule(userId, moduleId) {
   const { data, error } = await supabase
     .from('certificates')
@@ -44,6 +51,71 @@ async function getLatestCertificateForModule(userId, moduleId) {
 
   const latest = Array.isArray(data) ? data[0] ?? null : null;
   return normalizeCertificate(latest);
+}
+
+async function getCompletionIdentity(userId) {
+  const [authResult, profileResult] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('user_profiles')
+      .select('full_name')
+      .eq('user_id', userId)
+      .maybeSingle(),
+  ]);
+
+  const email = authResult?.data?.user?.email ?? null;
+  const profileName = profileResult?.data?.full_name ?? null;
+
+  return {
+    employeeName: profileName || email || 'Employee',
+  };
+}
+
+async function waitForCertificate(userId, moduleId, attempts = 4, delayMs = 400) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const certificate = await getLatestCertificateForModule(userId, moduleId);
+    if (certificate) {
+      return certificate;
+    }
+
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  return null;
+}
+
+async function ensureCertificateIssued(userId, module, score) {
+  const existingCertificate = await getLatestCertificateForModule(userId, module.id);
+  if (existingCertificate) {
+    return existingCertificate;
+  }
+
+  const { employeeName } = await getCompletionIdentity(userId);
+  const certificatePayload = {
+    user_id: userId,
+    training_module_id: module.id,
+    company_id: module.company_id,
+    certificate_number: createCertificateNumber(),
+    issue_date: new Date().toISOString(),
+    employee_name: employeeName,
+    module_title: module.title,
+    completion_score: score,
+    status: 'issued',
+    is_verified: true,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from('certificates')
+    .insert(certificatePayload);
+
+  if (error && !String(error.message || '').toLowerCase().includes('duplicate')) {
+    throw new Error(error.message);
+  }
+
+  return waitForCertificate(userId, module.id);
 }
 
 /**
@@ -305,9 +377,10 @@ export async function submitTrainingQuiz(userId, moduleId, answers) {
   let certificate = null;
   if (passed) {
     try {
-      certificate = await getLatestCertificateForModule(userId, moduleId);
+      certificate = await ensureCertificateIssued(userId, module, score);
     } catch (certificateError) {
       console.warn('Certificate lookup failed after module completion:', certificateError);
+      certificate = await waitForCertificate(userId, moduleId);
     }
   }
 

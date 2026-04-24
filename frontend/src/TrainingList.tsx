@@ -4,6 +4,10 @@ import { TrainingModule } from './TrainingModule';
 import authService from './services/authService';
 import { getTrainingModules } from './services/trainingModuleService';
 import { getUserTrainingProgress } from './services/trainingProgressService';
+import {
+  getCyberlearnHistoryState,
+  pushCyberlearnHistoryState,
+} from './lib/navigationHistory';
 
 const categoryColors: Record<string, string> = {
   phishing:
@@ -41,6 +45,10 @@ export function TrainingList() {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  type TrainingHistoryState = {
+    view: 'training';
+    moduleId?: string | null;
+  };
 
   const loadTrainingData = useCallback(async () => {
     setLoading(true);
@@ -80,15 +88,34 @@ export function TrainingList() {
     };
   }, [loadTrainingData]);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      const state = getCyberlearnHistoryState<TrainingHistoryState>();
+      const nextModuleId = state?.moduleId ?? null;
+      setActiveModuleId(nextModuleId);
+
+      if (!nextModuleId) {
+        void loadTrainingData();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [loadTrainingData]);
+
   const progressMap = useMemo(() => new Map(myProgress.map((progressRow) => [progressRow.moduleId, progressRow])), [myProgress]);
 
   if (activeModuleId) {
     return (
       <TrainingModule
         moduleId={activeModuleId}
+        onViewCertificates={() => {
+          window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'certificates' } }));
+        }}
         onBack={() => {
-          setActiveModuleId(null);
-          void loadTrainingData();
+          window.history.back();
         }}
       />
     );
@@ -192,7 +219,13 @@ export function TrainingList() {
               ) : null}
 
               <button
-                onClick={() => setActiveModuleId(module.id)}
+                onClick={() => {
+                  pushCyberlearnHistoryState<TrainingHistoryState>({
+                    view: 'training',
+                    moduleId: module.id,
+                  });
+                  setActiveModuleId(module.id);
+                }}
                 className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   status === 'completed'
                     ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 dark:hover:bg-green-900/30'

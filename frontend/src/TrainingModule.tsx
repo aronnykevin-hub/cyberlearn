@@ -13,9 +13,10 @@ import { getTrainingModule } from './services/trainingModuleService';
 interface Props {
   moduleId: string;
   onBack: () => void;
+  onViewCertificates?: () => void;
 }
 
-export function TrainingModule({ moduleId, onBack }: Props) {
+export function TrainingModule({ moduleId, onBack, onViewCertificates }: Props) {
   const [module, setModule] = useState<any | null>(null);
   const [progress, setProgress] = useState<any | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -26,6 +27,20 @@ export function TrainingModule({ moduleId, onBack }: Props) {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [quizResult, setQuizResult] = useState<{ score: number; passed: boolean; certificate?: any | null } | null>(null);
+
+  useEffect(() => {
+    if (!quizResult?.passed || !onViewCertificates) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      onViewCertificates();
+    }, 600);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [onViewCertificates, quizResult?.passed]);
 
   useEffect(() => {
     let mounted = true;
@@ -201,6 +216,14 @@ export function TrainingModule({ moduleId, onBack }: Props) {
             >
               Back to Modules
             </button>
+            {quizResult.passed && onViewCertificates ? (
+              <button
+                onClick={onViewCertificates}
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                View Certificates
+              </button>
+            ) : null}
             {!quizResult.passed ? (
               <button
                 onClick={() => {

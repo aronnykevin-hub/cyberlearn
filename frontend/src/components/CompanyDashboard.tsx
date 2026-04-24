@@ -12,6 +12,20 @@ import CertificatesPanel from './CertificatesPanel';
 import MyProfilePanel from './MyProfilePanel';
 import { TrainingList } from '../TrainingList';
 import { AdminTraining } from '../AdminTraining';
+import {
+  getCyberlearnHistoryState,
+  pushCyberlearnHistoryState,
+  replaceCyberlearnHistoryState,
+} from '../lib/navigationHistory';
+
+type CompanyTab = 'overview' | 'team' | 'training' | 'reports' | 'certificates' | 'profile';
+type CompanyPanel = 'members' | 'departments';
+type TrainingPanel = 'learn' | 'analytics';
+type CompanyHistoryState = {
+  tab: CompanyTab;
+  panel?: CompanyPanel;
+  trainingPanel?: TrainingPanel;
+};
 
 export const CompanyDashboard = ({ companyId, companyName }) => {
   const [stats, setStats] = useState({
@@ -37,38 +51,85 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     window.location.assign(path);
   };
 
-  const openTab = (tabId) => {
-    setActiveTab(tabId);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToCurrentSection = (tabId: CompanyTab) => {
+    if (tabId === 'overview') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (tabId === 'team') {
+      requestAnimationFrame(() => {
+        managementSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      });
+      return;
+    }
+
+    if (tabId === 'training') {
+      requestAnimationFrame(() => {
+        trainingSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      });
+      return;
+    }
+
+    if (tabId === 'reports') {
+      requestAnimationFrame(() => {
+        reportsSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      });
+    }
   };
 
-  const scrollToManagement = (panel) => {
-    setActivePanel(panel);
-    requestAnimationFrame(() => {
-      managementSectionRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    });
+  const normalizeHistoryState = (state: Partial<CompanyHistoryState> | null | undefined): CompanyHistoryState => ({
+    tab: state?.tab ?? 'overview',
+    panel: state?.tab === 'team' ? (state.panel ?? 'members') : undefined,
+    trainingPanel: state?.tab === 'training' ? (state.trainingPanel ?? 'learn') : undefined,
+  });
+
+  const applyCompanyState = (
+    nextState: Partial<CompanyHistoryState>,
+    historyMode: 'push' | 'replace' | 'none' = 'push',
+  ) => {
+    const normalizedState = normalizeHistoryState(nextState);
+
+    setActiveTab(normalizedState.tab);
+    if (normalizedState.tab === 'team') {
+      setActivePanel(normalizedState.panel ?? 'members');
+    }
+    if (normalizedState.tab === 'training') {
+      setTrainingPanel(normalizedState.trainingPanel ?? 'learn');
+    }
+
+    if (historyMode === 'push') {
+      pushCyberlearnHistoryState<CompanyHistoryState>(normalizedState);
+    } else if (historyMode === 'replace') {
+      replaceCyberlearnHistoryState<CompanyHistoryState>(normalizedState);
+    }
+
+    scrollToCurrentSection(normalizedState.tab);
   };
 
-  const scrollToTraining = (panel) => {
-    setTrainingPanel(panel);
-    requestAnimationFrame(() => {
-      trainingSectionRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    });
+  const openTab = (tabId: CompanyTab) => {
+    applyCompanyState({ tab: tabId }, 'push');
+  };
+
+  const scrollToManagement = (panel: CompanyPanel) => {
+    applyCompanyState({ tab: 'team', panel }, 'push');
+  };
+
+  const scrollToTraining = (panel: TrainingPanel) => {
+    applyCompanyState({ tab: 'training', trainingPanel: panel }, 'push');
   };
 
   const scrollToReports = () => {
-    requestAnimationFrame(() => {
-      reportsSectionRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    });
+    applyCompanyState({ tab: 'reports' }, 'push');
   };
 
   const loadStats = async () => {
@@ -126,53 +187,61 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
   }, [companyId]);
 
   useEffect(() => {
+    replaceCyberlearnHistoryState<CompanyHistoryState>({ tab: 'overview' });
+
+    const handlePopState = () => {
+      const state = getCyberlearnHistoryState<CompanyHistoryState>();
+      applyCompanyState(state ?? { tab: 'overview' }, 'none');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent).detail || {};
       const target = detail.target;
 
       if (target === 'training-learn') {
-        setActiveTab('training');
         scrollToTraining('learn');
         return;
       }
 
       if (target === 'training-analytics') {
-        setActiveTab('training');
         scrollToTraining('analytics');
         return;
       }
 
       if (target === 'team-members') {
-        setActiveTab('team');
         scrollToManagement('members');
         return;
       }
 
       if (target === 'departments') {
-        setActiveTab('team');
         scrollToManagement('departments');
         return;
       }
 
       if (target === 'reports') {
-        setActiveTab('reports');
         scrollToReports();
         return;
       }
 
       if (target === 'certificates') {
-        setActiveTab('certificates');
+        openTab('certificates');
         return;
       }
 
       if (target === 'profile') {
-        setActiveTab('profile');
+        openTab('profile');
         return;
       }
 
       if (target === 'dashboard-top') {
-        setActiveTab('overview');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        openTab('overview');
       }
     };
 
@@ -319,8 +388,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
           <div className="hidden md:flex flex-wrap gap-2">
             <button
               onClick={() => {
-                openTab('team');
-                setActivePanel('members');
+                scrollToManagement('members');
               }}
               className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700"
             >
@@ -471,7 +539,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
             </div>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setActivePanel('members')}
+                onClick={() => scrollToManagement('members')}
                 className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
                   activePanel === 'members'
                     ? 'bg-indigo-600 text-white'
@@ -482,7 +550,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
                 Add Employees
               </button>
               <button
-                onClick={() => setActivePanel('departments')}
+                onClick={() => scrollToManagement('departments')}
                 className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
                   activePanel === 'departments'
                     ? 'bg-indigo-600 text-white'
@@ -517,7 +585,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
             </div>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setTrainingPanel('learn')}
+                onClick={() => scrollToTraining('learn')}
                 className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
                   trainingPanel === 'learn'
                     ? 'bg-indigo-600 text-white'
@@ -528,7 +596,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
                 Learn Modules
               </button>
               <button
-                onClick={() => setTrainingPanel('analytics')}
+                onClick={() => scrollToTraining('analytics')}
                 className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
                   trainingPanel === 'analytics'
                     ? 'bg-indigo-600 text-white'

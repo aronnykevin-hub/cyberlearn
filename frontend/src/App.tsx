@@ -15,6 +15,15 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { useTheme } from "./contexts/ThemeContext";
 import DashboardRouter from "./components/DashboardRouter";
 import AuthCallback from "./AuthCallback";
+import {
+  getCyberlearnHistoryState,
+  pushCyberlearnHistoryState,
+  replaceCyberlearnHistoryState,
+} from "./lib/navigationHistory";
+
+type AppHistoryState = {
+  view: "landing" | "signin";
+};
 
 export default function App() {
   const { theme } = useTheme();
@@ -28,6 +37,11 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const isAdmin = profile?.role === 'admin';
+
+  const openAuthScreen = () => {
+    pushCyberlearnHistoryState<AppHistoryState>({ view: "signin" });
+    setShowAuthScreen(true);
+  };
 
   // Initialize auth state listener
   useEffect(() => {
@@ -74,6 +88,26 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (isAuthCallbackPath) {
+      return;
+    }
+
+    replaceCyberlearnHistoryState<AppHistoryState>({
+      view: showAuthScreen || shouldOpenAuthScreen ? "signin" : "landing",
+    });
+
+    const handlePopState = () => {
+      const state = getCyberlearnHistoryState<AppHistoryState>();
+      setShowAuthScreen(state?.view === "signin");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [isAuthCallbackPath, shouldOpenAuthScreen, showAuthScreen]);
+
   // Show loading state
   if (loading) {
     return (
@@ -115,7 +149,10 @@ export default function App() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowAuthScreen(false)}
+                  onClick={() => {
+                    replaceCyberlearnHistoryState<AppHistoryState>({ view: "landing" });
+                    setShowAuthScreen(false);
+                  }}
                   className="text-sm px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-500"
                 >
                   Back to Home
@@ -143,9 +180,9 @@ export default function App() {
     }
 
     return (
-      <div className={theme === 'dark' ? 'dark' : ''}>
+        <div className={theme === 'dark' ? 'dark' : ''}>
         <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-          <LandingPage onStartTrial={() => setShowAuthScreen(true)} />
+          <LandingPage onStartTrial={openAuthScreen} />
           <Toaster theme={theme === 'dark' ? 'dark' : 'light'} position="top-right" />
         </div>
       </div>
