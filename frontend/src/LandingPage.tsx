@@ -5,6 +5,10 @@ export default function LandingPage({ onStartTrial = () => {} }) {
   const [isDark, setIsDark] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [formData, setFormData] = useState({ name: '', email: '', organization: '', message: '' });
+  const [contactChannel, setContactChannel] = useState('email');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -22,6 +26,40 @@ export default function LandingPage({ onStartTrial = () => {} }) {
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: 'smooth' });
     setIsMenuOpen(false);
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) {
+      setSubmitMessage('Please fill in all required fields');
+      setTimeout(() => setSubmitMessage(''), 3000);
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      if (contactChannel === 'email') {
+        // Open Gmail compose
+        const gmailLink = `https://mail.google.com/mail/u/0/?view=cm&fs=1&to=nansubugaluis@gmail.com&subject=${encodeURIComponent(`Contact from ${formData.name}`)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\nOrganization: ${formData.organization}\n\nMessage:\n${formData.message}`)}`;
+        window.open(gmailLink, '_blank');
+        setSubmitMessage('Opening Gmail... Please send the message to complete.');
+      } else if (contactChannel === 'whatsapp') {
+        // Open WhatsApp
+        const whatsappMessage = `Hello, my name is ${formData.name}.\n\nOrganization: ${formData.organization}\nEmail: ${formData.email}\n\nMessage: ${formData.message}`;
+        const whatsappLink = `https://wa.me/256701948579?text=${encodeURIComponent(whatsappMessage)}`;
+        window.open(whatsappLink, '_blank');
+        setSubmitMessage('Opening WhatsApp... Please send the message to complete.');
+      }
+      
+      setFormData({ name: '', email: '', organization: '', message: '' });
+      setTimeout(() => setSubmitMessage(''), 5000);
+    } catch (error) {
+      setSubmitMessage('Error opening contact channel. Please try again.');
+      setTimeout(() => setSubmitMessage(''), 3000);
+    }
+    
+    setIsSubmitting(false);
   };
 
   const footerGroups = {
@@ -756,12 +794,14 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                   ? 'bg-slate-800/50 border-slate-700/50'
                   : 'bg-slate-50 border-slate-200/50'
               }`}>
-                <form className="space-y-6">
+                <form onSubmit={handleFormSubmit} className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold mb-2">Name</label>
                     <input
                       type="text"
                       placeholder="Your name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className={`w-full px-4 py-3 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-600 ${
                         isDark
                           ? 'bg-slate-700/50 border-slate-600/50 text-white placeholder-slate-500'
@@ -775,6 +815,8 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                     <input
                       type="email"
                       placeholder="your@email.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className={`w-full px-4 py-3 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-600 ${
                         isDark
                           ? 'bg-slate-700/50 border-slate-600/50 text-white placeholder-slate-500'
@@ -788,6 +830,8 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                     <input
                       type="text"
                       placeholder="Your organization"
+                      value={formData.organization}
+                      onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
                       className={`w-full px-4 py-3 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-600 ${
                         isDark
                           ? 'bg-slate-700/50 border-slate-600/50 text-white placeholder-slate-500'
@@ -801,6 +845,8 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                     <textarea
                       rows="4"
                       placeholder="Tell us about your needs..."
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       className={`w-full px-4 py-3 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-600 ${
                         isDark
                           ? 'bg-slate-700/50 border-slate-600/50 text-white placeholder-slate-500'
@@ -809,8 +855,50 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                     ></textarea>
                   </div>
 
-                  <button type="submit" className="w-full py-3 bg-[#0047AB] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300">
-                    Send Message
+                  <div>
+                    <label className="block text-sm font-semibold mb-3">Contact via</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="channel"
+                          value="email"
+                          checked={contactChannel === 'email'}
+                          onChange={(e) => setContactChannel(e.target.value)}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                        <span className="text-sm">📧 Gmail</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="channel"
+                          value="whatsapp"
+                          checked={contactChannel === 'whatsapp'}
+                          onChange={(e) => setContactChannel(e.target.value)}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                        <span className="text-sm">💬 WhatsApp</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {submitMessage && (
+                    <div className={`p-3 rounded-lg text-sm ${
+                      submitMessage.includes('Opening') || submitMessage.includes('Gmail') || submitMessage.includes('WhatsApp')
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    }`}>
+                      {submitMessage}
+                    </div>
+                  )}
+
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full py-3 bg-[#0047AB] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Opening...' : `Send via ${contactChannel === 'email' ? 'Gmail' : 'WhatsApp'}`}
                   </button>
                 </form>
               </div>
