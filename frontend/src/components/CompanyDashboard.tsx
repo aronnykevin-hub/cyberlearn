@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 import { companyService } from '../services/companyService';
 import { ensureDepartmentLearningModules } from '../services/trainingModuleService';
-import DashboardTabs from './DashboardTabs';
 import CompanyMembersPanel from './CompanyMembersPanel';
 import AdminUserAssignment from './AdminUserAssignment';
 import AdminReportsPanel from './AdminReportsPanel';
@@ -293,29 +292,20 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     );
   }
 
-  const dashboardTabs = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'team', label: 'Team', icon: Users, badge: stats.employees },
-    { id: 'training', label: 'Training', icon: BookOpen, badge: stats.trainingModules },
-    { id: 'reports', label: 'Reports', icon: Zap, badge: stats.threatReports },
-    { id: 'certificates', label: 'Certificates', icon: Award, badge: stats.certificates },
-    { id: 'profile', label: 'My Profile', icon: Settings },
-  ];
-
   return (
     <div className="space-y-8">
       <div>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-300">
+            <p className="hidden md:block text-xs font-semibold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-300">
               Admin workspace
             </p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{companyName}</h1>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">
+            <h1 className="mt-0 md:mt-2 text-3xl font-bold text-slate-900 dark:text-white">{companyName}</h1>
+            <p className="hidden md:block mt-2 text-slate-600 dark:text-slate-400">
               Move between your team, training, reports, certificates, and profile without leaving the page.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="hidden md:flex flex-wrap gap-2">
             <button
               onClick={() => {
                 openTab('team');
@@ -336,8 +326,6 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
           </div>
         </div>
       </div>
-
-      <DashboardTabs tabs={dashboardTabs} activeTab={activeTab} onChange={openTab} />
 
       {activeTab === 'overview' && (
         <div className="space-y-8">

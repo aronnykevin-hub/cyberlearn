@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 import { TrainingList } from '../TrainingList';
 import EmployeeReportsPanel from './EmployeeReportsPanel';
-import DashboardTabs from './DashboardTabs';
 import CertificatesPanel from './CertificatesPanel';
 import MyProfilePanel from './MyProfilePanel';
 
@@ -174,18 +173,9 @@ export const EmployeeDashboardLimited = () => {
     );
   }
 
-  const dashboardTabs = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'training', label: 'Training', icon: BookOpen, badge: stats.assignedModules },
-    { id: 'reports', label: 'Reports', icon: AlertTriangle, badge: stats.myReports },
-    { id: 'certificates', label: 'Certificates', icon: Award, badge: stats.myCertificates },
-    { id: 'profile', label: 'My Profile', icon: UserCircle2 },
-  ];
-
   if (activeView === 'training') {
     return (
       <div className="space-y-6">
-        <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Training Modules</h1>
@@ -209,7 +199,6 @@ export const EmployeeDashboardLimited = () => {
   if (activeView === 'reports') {
     return (
       <div className="space-y-6">
-        <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Threat Reports</h1>
@@ -231,7 +220,6 @@ export const EmployeeDashboardLimited = () => {
   if (activeView === 'certificates') {
     return (
       <div className="space-y-6">
-        <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Certificates</h1>
@@ -253,7 +241,6 @@ export const EmployeeDashboardLimited = () => {
   if (activeView === 'profile') {
     return (
       <div className="space-y-6">
-        <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">My Profile</h1>
@@ -274,7 +261,6 @@ export const EmployeeDashboardLimited = () => {
 
   return (
     <div className="space-y-8">
-      <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
           Welcome, {user?.user_metadata?.full_name || 'Employee'}

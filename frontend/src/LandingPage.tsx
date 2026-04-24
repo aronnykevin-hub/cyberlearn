@@ -134,7 +134,7 @@ export default function LandingPage({ onStartTrial = () => {} }) {
               {/* Left Content */}
               <div className="space-y-8 animate-in fade-in slide-in-from-left duration-1000">
                 <div className="inline-block px-4 py-2 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-600/30">
-                  <span className="text-sm font-semibold text-blue-600">🚀 Cybersecurity Training Platform</span>
+                  <span className="text-sm font-semibold text-blue-600">Cybersecurity Training Platform</span>
                 </div>
 
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight bg-gradient-to-r from-blue-600 via-purple-600 to-blue-400 bg-clip-text text-transparent">
