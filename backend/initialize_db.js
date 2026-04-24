@@ -121,6 +121,7 @@ async function initializeDatabase() {
       '09_phishing_and_certificates.sql',
       '10_company_access_control.sql',
       '../11_fix_user_role_assignment.sql',
+      '../12_comprehensive_dept_training.sql',
       '12_admin_training_learning_access.sql',
       '13_training_completion_certificates.sql',
       '14_company_profile_alignment.sql',
