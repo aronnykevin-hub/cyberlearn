@@ -161,21 +161,7 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                   </button>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-6 pt-8 border-t border-slate-300/20">
-                  <div>
-                    <p className="text-3xl font-bold text-blue-600">500+</p>
-                    <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Organizations</p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-purple-600">50K+</p>
-                    <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Employees Trained</p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-blue-400">98%</p>
-                    <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Success Rate</p>
-                  </div>
-                </div>
+                {/* ...stats removed... */}
               </div>
 
               {/* Right Visual - Animated Dashboard Preview */}
@@ -240,17 +226,7 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                       </div>
                     </div>
 
-                    {/* Floating Stats */}
-                    <div className="grid grid-cols-2 gap-2 pt-4 border-t border-slate-300/20">
-                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
-                        <p className="text-xs text-slate-500">Active Users</p>
-                        <p className="text-lg font-bold">245</p>
-                      </div>
-                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
-                        <p className="text-xs text-slate-500">Modules</p>
-                        <p className="text-lg font-bold">32</p>
-                      </div>
-                    </div>
+                    {/* ...floating stats removed... */}
                   </div>
                 </div>
 

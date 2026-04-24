@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, ArrowLeft, Award, BarChart3, BookOpen, Loader, PlayCircle } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Award, BarChart3, BookOpen, Loader, PlayCircle, UserCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 import { TrainingList } from '../TrainingList';
 import EmployeeReportsPanel from './EmployeeReportsPanel';
+import DashboardTabs from './DashboardTabs';
+import CertificatesPanel from './CertificatesPanel';
+import MyProfilePanel from './MyProfilePanel';
 
-type DashboardView = 'overview' | 'training' | 'reports';
+type DashboardView = 'overview' | 'training' | 'reports' | 'certificates' | 'profile';
 
 export const EmployeeDashboardLimited = () => {
   const [stats, setStats] = useState({
@@ -19,6 +22,11 @@ export const EmployeeDashboardLimited = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
   const [activeView, setActiveView] = useState<DashboardView>('overview');
+
+  const openView = (view: DashboardView) => {
+    setActiveView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -125,18 +133,27 @@ export const EmployeeDashboardLimited = () => {
       const target = detail.target;
 
       if (target === 'training-learn') {
-        setActiveView('training');
+        openView('training');
         return;
       }
 
       if (target === 'reports') {
-        setActiveView('reports');
+        openView('reports');
+        return;
+      }
+
+      if (target === 'certificates') {
+        openView('certificates');
+        return;
+      }
+
+      if (target === 'profile') {
+        openView('profile');
         return;
       }
 
       if (target === 'dashboard-top') {
-        setActiveView('overview');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        openView('overview');
       }
     };
 
@@ -157,9 +174,18 @@ export const EmployeeDashboardLimited = () => {
     );
   }
 
+  const dashboardTabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'training', label: 'Training', icon: BookOpen, badge: stats.assignedModules },
+    { id: 'reports', label: 'Reports', icon: AlertTriangle, badge: stats.myReports },
+    { id: 'certificates', label: 'Certificates', icon: Award, badge: stats.myCertificates },
+    { id: 'profile', label: 'My Profile', icon: UserCircle2 },
+  ];
+
   if (activeView === 'training') {
     return (
       <div className="space-y-6">
+        <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Training Modules</h1>
@@ -168,7 +194,7 @@ export const EmployeeDashboardLimited = () => {
             </p>
           </div>
           <button
-            onClick={() => setActiveView('overview')}
+            onClick={() => openView('overview')}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -183,13 +209,14 @@ export const EmployeeDashboardLimited = () => {
   if (activeView === 'reports') {
     return (
       <div className="space-y-6">
+        <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Threat Reports</h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm">Submit new reports and track admin replies.</p>
           </div>
           <button
-            onClick={() => setActiveView('overview')}
+            onClick={() => openView('overview')}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -201,8 +228,53 @@ export const EmployeeDashboardLimited = () => {
     );
   }
 
+  if (activeView === 'certificates') {
+    return (
+      <div className="space-y-6">
+        <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Certificates</h1>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">All of your issued training certificates from Supabase.</p>
+          </div>
+          <button
+            onClick={() => openView('overview')}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+        </div>
+        <CertificatesPanel />
+      </div>
+    );
+  }
+
+  if (activeView === 'profile') {
+    return (
+      <div className="space-y-6">
+        <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">My Profile</h1>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">Keep your account details and contact information current.</p>
+          </div>
+          <button
+            onClick={() => openView('overview')}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+        </div>
+        <MyProfilePanel />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
+      <DashboardTabs tabs={dashboardTabs} activeTab={activeView} onChange={(tabId) => openView(tabId as DashboardView)} />
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
           Welcome, {user?.user_metadata?.full_name || 'Employee'}
@@ -280,18 +352,32 @@ export const EmployeeDashboardLimited = () => {
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setActiveView('training')}
+              onClick={() => openView('training')}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               <PlayCircle className="w-4 h-4" />
               Open Training
             </button>
             <button
-              onClick={() => setActiveView('reports')}
+              onClick={() => openView('reports')}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <AlertTriangle className="w-4 h-4" />
               Open Reports
+            </button>
+            <button
+              onClick={() => openView('certificates')}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+            >
+              <Award className="w-4 h-4" />
+              Certificates
+            </button>
+            <button
+              onClick={() => openView('profile')}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              My Profile
             </button>
           </div>
         </div>

@@ -271,6 +271,24 @@ export default function App() {
                 >
                   Threat Reports
                 </button>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'certificates' } }));
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                >
+                  Certificates
+                </button>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'profile' } }));
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                >
+                  My Profile
+                </button>
                 {isAdmin && (
                   <>
                     <button
@@ -302,8 +320,8 @@ export default function App() {
                     </button>
                     <button
                       onClick={() => {
+                        window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'training-analytics' } }));
                         setMobileMenuOpen(false);
-                        window.location.assign('/phishing-campaigns');
                       }}
                       className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
                     >
@@ -311,21 +329,12 @@ export default function App() {
                     </button>
                     <button
                       onClick={() => {
+                        window.dispatchEvent(new CustomEvent('cyberlearn:navigate', { detail: { target: 'profile' } }));
                         setMobileMenuOpen(false);
-                        window.location.assign('/certificates');
                       }}
                       className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
                     >
-                      Certificates
-                    </button>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        window.location.assign('/company-settings');
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                    >
-                      Company Settings
+                      My Profile
                     </button>
                   </>
                 )}

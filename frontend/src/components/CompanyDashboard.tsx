@@ -4,9 +4,12 @@ import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 import { companyService } from '../services/companyService';
 import { ensureDepartmentLearningModules } from '../services/trainingModuleService';
+import DashboardTabs from './DashboardTabs';
 import CompanyMembersPanel from './CompanyMembersPanel';
 import AdminUserAssignment from './AdminUserAssignment';
 import AdminReportsPanel from './AdminReportsPanel';
+import CertificatesPanel from './CertificatesPanel';
+import MyProfilePanel from './MyProfilePanel';
 import { TrainingList } from '../TrainingList';
 import { AdminTraining } from '../AdminTraining';
 
@@ -20,6 +23,7 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     certificates: 0
   });
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
   const [activePanel, setActivePanel] = useState('members');
   const [trainingPanel, setTrainingPanel] = useState<'learn' | 'analytics'>('learn');
   const [initializingTrainingModules, setInitializingTrainingModules] = useState(false);
@@ -30,6 +34,11 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
 
   const navigateTo = (path) => {
     window.location.assign(path);
+  };
+
+  const openTab = (tabId) => {
+    setActiveTab(tabId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const scrollToManagement = (panel) => {
@@ -121,31 +130,47 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
       const target = detail.target;
 
       if (target === 'training-learn') {
+        setActiveTab('training');
         scrollToTraining('learn');
         return;
       }
 
       if (target === 'training-analytics') {
+        setActiveTab('training');
         scrollToTraining('analytics');
         return;
       }
 
       if (target === 'team-members') {
+        setActiveTab('team');
         scrollToManagement('members');
         return;
       }
 
       if (target === 'departments') {
+        setActiveTab('team');
         scrollToManagement('departments');
         return;
       }
 
       if (target === 'reports') {
+        setActiveTab('reports');
         scrollToReports();
         return;
       }
 
+      if (target === 'certificates') {
+        setActiveTab('certificates');
+        return;
+      }
+
+      if (target === 'profile') {
+        setActiveTab('profile');
+        return;
+      }
+
       if (target === 'dashboard-top') {
+        setActiveTab('overview');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     };
@@ -268,261 +293,356 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     );
   }
 
+  const dashboardTabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'team', label: 'Team', icon: Users, badge: stats.employees },
+    { id: 'training', label: 'Training', icon: BookOpen, badge: stats.trainingModules },
+    { id: 'reports', label: 'Reports', icon: Zap, badge: stats.threatReports },
+    { id: 'certificates', label: 'Certificates', icon: Award, badge: stats.certificates },
+    { id: 'profile', label: 'My Profile', icon: Settings },
+  ];
+
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{companyName}</h1>
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-300">
+              Admin workspace
+            </p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{companyName}</h1>
+            <p className="mt-2 text-slate-600 dark:text-slate-400">
+              Move between your team, training, reports, certificates, and profile without leaving the page.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => scrollToManagement('members')}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              onClick={() => {
+                openTab('team');
+                setActivePanel('members');
+              }}
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700"
             >
               <UserPlus className="w-4 h-4" />
               Add Employee
             </button>
             <button
-              onClick={() => navigateTo('/company-settings')}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+              onClick={() => openTab('profile')}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               <Settings className="w-4 h-4" />
-              Settings
+              My Profile
             </button>
           </div>
         </div>
-        <p className="text-slate-600 dark:text-slate-400">
-          6 services to manage your organization's cybersecurity training
-        </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {[
-          { label: 'Employees', value: stats.employees, icon: Users, color: 'text-purple-600' },
-          { label: 'Departments', value: stats.departments, icon: Building2, color: 'text-blue-600' },
-          { label: 'Modules', value: stats.trainingModules, icon: BookOpen, color: 'text-green-600' },
-          { label: 'Campaigns', value: stats.phishingCampaigns, icon: AlertTriangle, color: 'text-orange-600' },
-          { label: 'Reports', value: stats.threatReports, icon: Zap, color: 'text-red-600' },
-          { label: 'Certificates', value: stats.certificates, icon: Award, color: 'text-indigo-600' }
-        ].map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={idx}
-              className="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg p-4 text-center hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-            >
-              <Icon className={`w-6 h-6 ${stat.color} mx-auto mb-2`} />
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">{stat.label}</p>
-            </div>
-          );
-        })}
-      </div>
+      <DashboardTabs tabs={dashboardTabs} activeTab={activeTab} onChange={openTab} />
 
-      {/* Services Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service) => {
-          const Icon = service.icon;
-          return (
-            <div
-              key={service.number}
-              className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-lg overflow-hidden hover:shadow-lg dark:hover:shadow-lg/20 transition-all hover:border-slate-300 dark:hover:border-slate-600"
-            >
-              {/* Header with gradient */}
-              <div className={`h-24 bg-gradient-to-br ${service.color} relative overflow-hidden`}>
-                <div className="absolute inset-0 opacity-10">
-                  <Icon className="w-full h-full absolute right-0 top-0 transform translate-x-1/3 -translate-y-1/3" />
-                </div>
-                <div className="relative p-6 flex items-end justify-between h-full">
-                  <div>
-                    <p className="text-white/80 text-xs font-semibold mb-1">Service {service.number}</p>
-                    <h3 className="text-white font-bold">{service.title}</h3>
-                  </div>
-                  <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">
-                  {service.description}
-                </p>
-
-                {/* Stat */}
-                <div className="mb-6 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {service.stat}
-                  </p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    {service.statLabel}
-                  </p>
-                </div>
-
-                {/* Action Button */}
+      {activeTab === 'overview' && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+            {[
+              { label: 'Employees', value: stats.employees, icon: Users, color: 'text-purple-600' },
+              { label: 'Departments', value: stats.departments, icon: Building2, color: 'text-blue-600' },
+              { label: 'Modules', value: stats.trainingModules, icon: BookOpen, color: 'text-green-600' },
+              { label: 'Campaigns', value: stats.phishingCampaigns, icon: AlertTriangle, color: 'text-orange-600' },
+              { label: 'Reports', value: stats.threatReports, icon: Zap, color: 'text-red-600' },
+              { label: 'Certificates', value: stats.certificates, icon: Award, color: 'text-indigo-600' }
+            ].map((stat, idx) => {
+              const Icon = stat.icon;
+              return (
                 <button
-                  onClick={service.action}
-                  className={`w-full py-2 px-4 bg-gradient-to-r ${service.color} text-white rounded-lg hover:shadow-lg hover:shadow-indigo-500/50 transition-all font-medium text-sm`}
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    if (stat.label === 'Certificates') openTab('certificates');
+                    else if (stat.label === 'Reports') openTab('reports');
+                    else if (stat.label === 'Modules') openTab('training');
+                    else if (stat.label === 'Employees' || stat.label === 'Departments') openTab('team');
+                    else openTab('overview');
+                  }}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 text-center transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600"
                 >
-                  {service.actionText}
+                  <Icon className={`w-6 h-6 ${stat.color} mx-auto mb-2`} />
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">{stat.label}</p>
                 </button>
-              </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                number: 1,
+                title: 'Company Profile',
+                description: 'View and update your profile details',
+                icon: Settings,
+                color: 'from-blue-500 to-blue-600',
+                stat: stats.departments,
+                statLabel: 'Departments',
+                action: () => openTab('profile'),
+                actionText: 'Open profile'
+              },
+              {
+                number: 2,
+                title: 'Employee Management',
+                description: 'Add, assign roles, and manage employees',
+                icon: Users,
+                color: 'from-purple-500 to-purple-600',
+                stat: stats.employees,
+                statLabel: 'Employees',
+                action: () => openTab('team'),
+                actionText: 'Manage'
+              },
+              {
+                number: 3,
+                title: 'Training Modules',
+                description: 'Learn and deploy custom training content',
+                icon: BookOpen,
+                color: 'from-green-500 to-green-600',
+                stat: stats.trainingModules,
+                statLabel: 'Modules',
+                action: () => openTab('training'),
+                actionText: 'Open'
+              },
+              {
+                number: 4,
+                title: 'Security Drills',
+                description: 'Review simulation readiness and awareness tracking',
+                icon: AlertTriangle,
+                color: 'from-orange-500 to-orange-600',
+                stat: stats.phishingCampaigns,
+                statLabel: 'Campaigns',
+                action: () => {
+                  setTrainingPanel('analytics');
+                  openTab('training');
+                },
+                actionText: 'Review'
+              },
+              {
+                number: 5,
+                title: 'Threat Reports',
+                description: 'Monitor and respond to threat reports',
+                icon: Zap,
+                color: 'from-red-500 to-red-600',
+                stat: stats.threatReports,
+                statLabel: 'Reports',
+                action: () => openTab('reports'),
+                actionText: 'Review'
+              },
+              {
+                number: 6,
+                title: 'Certificates',
+                description: 'Issue and track digital certificates',
+                icon: Award,
+                color: 'from-indigo-500 to-indigo-600',
+                stat: stats.certificates,
+                statLabel: 'Issued',
+                action: () => openTab('certificates'),
+                actionText: 'View'
+              }
+            ].map((service) => {
+              const Icon = service.icon;
+              return (
+                <div
+                  key={service.number}
+                  className="overflow-hidden rounded-3xl border border-slate-200 bg-white transition-all hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                >
+                  <div className={`relative h-24 bg-gradient-to-br ${service.color} overflow-hidden`}>
+                    <div className="absolute inset-0 opacity-10">
+                      <Icon className="absolute right-0 top-0 h-full w-full translate-x-1/3 -translate-y-1/3 transform" />
+                    </div>
+                    <div className="relative flex h-full items-end justify-between p-6">
+                      <div>
+                        <p className="mb-1 text-xs font-semibold text-white/80">Service {service.number}</p>
+                        <h3 className="font-bold text-white">{service.title}</h3>
+                      </div>
+                      <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
+                        <Icon className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">{service.description}</p>
+                    <div className="mb-6 rounded-2xl bg-slate-50 p-3 text-center dark:bg-slate-800">
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white">{service.stat}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">{service.statLabel}</p>
+                    </div>
+                    <button
+                      onClick={service.action}
+                      className={`w-full rounded-xl bg-gradient-to-r ${service.color} px-4 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg`}
+                    >
+                      {service.actionText}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
+            <h3 className="mb-3 flex items-center gap-2 font-bold text-blue-900 dark:text-blue-400">
+              <BarChart3 className="h-5 w-5" />
+              Getting Started with CyberLearn
+            </h3>
+            <ol className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
+              <li className="flex gap-3">
+                <span className="flex-shrink-0 font-bold">1.</span>
+                <span>Start with Company Profile to keep your account details current.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex-shrink-0 font-bold">2.</span>
+                <span>Add employees through Team management and assign them to departments.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex-shrink-0 font-bold">3.</span>
+                <span>Open Training to create or review learning modules and awareness drills.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex-shrink-0 font-bold">4.</span>
+                <span>Monitor Threat Reports and keep an eye on issued Certificates.</span>
+              </li>
+            </ol>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'team' && (
+        <div
+          ref={managementSectionRef}
+          className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Employee Management</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Add existing CyberLearn users, place them in departments, and unlock training access.
+              </p>
             </div>
-          );
-        })}
-      </div>
-
-      <div
-        ref={trainingSectionRef}
-        className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-lg p-6 space-y-6"
-      >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Training Workspace</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Admins can learn modules directly and monitor team completion/quiz scores.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setTrainingPanel('learn')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                trainingPanel === 'learn'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              Learn Modules
-            </button>
-            <button
-              onClick={() => setTrainingPanel('analytics')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                trainingPanel === 'analytics'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Team Analytics
-            </button>
-            {trainingPanel === 'learn' && (
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => void initializeDepartmentModules()}
-                disabled={initializingTrainingModules}
-                className="px-4 py-2 rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                onClick={() => setActivePanel('members')}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
+                  activePanel === 'members'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                }`}
               >
-                {initializingTrainingModules ? 'Preparing Modules...' : 'Create Department Modules'}
+                <UserPlus className="w-4 h-4" />
+                Add Employees
               </button>
-            )}
+              <button
+                onClick={() => setActivePanel('departments')}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
+                  activePanel === 'departments'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                }`}
+              >
+                <UserCheck className="w-4 h-4" />
+                Assign Departments
+              </button>
+            </div>
           </div>
+
+          {activePanel === 'members' ? (
+            <CompanyMembersPanel companyId={companyId} onMembersChanged={loadStats} />
+          ) : (
+            <AdminUserAssignment companyId={companyId} onAssignmentComplete={loadStats} />
+          )}
         </div>
+      )}
 
-        {trainingPanel === 'learn' ? <TrainingList /> : <AdminTraining />}
-      </div>
-
-      <div
-        ref={reportsSectionRef}
-        className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-lg p-6 space-y-4"
-      >
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Threat Report Center</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Review employee reports, reply directly, and track report resolution status.
-            </p>
+      {activeTab === 'training' && (
+        <div
+          ref={trainingSectionRef}
+          className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Training Workspace</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Learn modules directly and monitor team completion and quiz scores.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setTrainingPanel('learn')}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
+                  trainingPanel === 'learn'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                Learn Modules
+              </button>
+              <button
+                onClick={() => setTrainingPanel('analytics')}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-colors ${
+                  trainingPanel === 'analytics'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Team Analytics
+              </button>
+              {trainingPanel === 'learn' && (
+                <button
+                  onClick={() => void initializeDepartmentModules()}
+                  disabled={initializingTrainingModules}
+                  className="rounded-xl border border-indigo-300 px-4 py-2 text-indigo-700 transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-900/20"
+                >
+                  {initializingTrainingModules ? 'Preparing Modules...' : 'Create Department Modules'}
+                </button>
+              )}
+            </div>
           </div>
-          <button
-            onClick={() => scrollToReports()}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm"
-          >
-            <MessageSquare className="w-4 h-4" />
-            Open Reports
-          </button>
+
+          {trainingPanel === 'learn' ? <TrainingList /> : <AdminTraining />}
         </div>
+      )}
 
-        <AdminReportsPanel companyId={companyId} />
-      </div>
-
-      <div
-        ref={managementSectionRef}
-        className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-lg p-6 space-y-6"
-      >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Employee Management</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Add existing CyberLearn users, place them in departments, and unlock training access.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
+      {activeTab === 'reports' && (
+        <div
+          ref={reportsSectionRef}
+          className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+        >
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Threat Report Center</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Review employee reports, reply directly, and track report resolution status.
+              </p>
+            </div>
             <button
-              onClick={() => setActivePanel('members')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                activePanel === 'members'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-              }`}
+              onClick={() => scrollToReports()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
-              <UserPlus className="w-4 h-4" />
-              Add Employees
-            </button>
-            <button
-              onClick={() => setActivePanel('departments')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                activePanel === 'departments'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-              }`}
-            >
-              <UserCheck className="w-4 h-4" />
-              Assign Departments
+              <MessageSquare className="w-4 h-4" />
+              Open Reports
             </button>
           </div>
+
+          <AdminReportsPanel companyId={companyId} />
         </div>
+      )}
 
-        {activePanel === 'members' ? (
-          <CompanyMembersPanel companyId={companyId} onMembersChanged={loadStats} />
-        ) : (
-          <AdminUserAssignment companyId={companyId} onAssignmentComplete={loadStats} />
-        )}
-      </div>
+      {activeTab === 'certificates' && (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
+          <CertificatesPanel />
+        </div>
+      )}
 
-      {/* Getting Started Guide */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-        <h3 className="font-bold text-blue-900 dark:text-blue-400 mb-3 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
-          Getting Started with CyberLearn
-        </h3>
-        <ol className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
-          <li className="flex gap-3">
-            <span className="font-bold flex-shrink-0">1.</span>
-            <span>Start with Company Profile - configure your departments and security policies</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold flex-shrink-0">2.</span>
-            <span>Add employees through Employee Management and assign them to departments</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold flex-shrink-0">3.</span>
-            <span>Create or assign Training Modules for your departments</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold flex-shrink-0">4.</span>
-            <span>Launch Phishing Simulations to test employee awareness</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold flex-shrink-0">5.</span>
-            <span>Monitor Threat Reports from your employees</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="font-bold flex-shrink-0">6.</span>
-            <span>Issue Certificates to employees upon training completion</span>
-          </li>
-        </ol>
-      </div>
+      {activeTab === 'profile' && (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
+          <MyProfilePanel />
+        </div>
+      )}
     </div>
   );
 };
