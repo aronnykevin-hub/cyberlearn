@@ -27,7 +27,7 @@ export const CompanyOnboardingFlow = ({ companyId, companyName }) => {
         'Assign roles',
         'Set permissions'
       ],
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-[#0047AB] to-sky-600'
     },
     {
       number: 3,
@@ -75,7 +75,7 @@ export const CompanyOnboardingFlow = ({ companyId, companyName }) => {
         'Track achievements',
         'Share credentials'
       ],
-      color: 'from-indigo-500 to-indigo-600'
+      color: 'from-[#0047AB] to-sky-600'
     }
   ];
 
@@ -98,11 +98,11 @@ export const CompanyOnboardingFlow = ({ companyId, companyName }) => {
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-400">Step {currentStep + 1} of 6</p>
-              <div className="w-48 h-1 bg-slate-700 rounded-full mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300"
-                  style={{ width: `${((currentStep + 1) / 6) * 100}%` }}
-                />
+                <div className="w-48 h-1 bg-slate-700 rounded-full mt-2 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#0047AB] to-sky-500 transition-all duration-300"
+                    style={{ width: `${((currentStep + 1) / 6) * 100}%` }}
+                  />
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@ export const CompanyOnboardingFlow = ({ companyId, companyName }) => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <div className={`bg-gradient-to-br ${currentStepData.color} rounded-lg p-8 text-white mb-8`}>
+                <div className={`bg-gradient-to-br ${currentStepData.color} rounded-lg p-8 text-white mb-8`}>
               <div className="flex items-start gap-4 mb-6">
                 <div className="p-3 bg-white/20 rounded-lg">
                   <CurrentIcon className="w-8 h-8" />
@@ -151,7 +151,7 @@ export const CompanyOnboardingFlow = ({ companyId, companyName }) => {
               <button
                 onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
                 disabled={currentStep === steps.length - 1}
-                className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-6 py-3 bg-[#0047AB] text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Next →
               </button>

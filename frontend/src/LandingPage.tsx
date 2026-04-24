@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Moon, Sun, ArrowRight, Shield, Users, BookOpen, BarChart3, Bell, Award, Mail, Share2, MessageCircle, ChevronDown } from 'lucide-react';
+import { Menu, X, Moon, Sun, ArrowRight, Shield, Users, BookOpen, BarChart3, Bell, Award, Mail, Share2, MessageCircle } from 'lucide-react';
 
 export default function LandingPage({ onStartTrial = () => {} }) {
   const [isDark, setIsDark] = useState(false);
@@ -13,13 +13,40 @@ export default function LandingPage({ onStartTrial = () => {} }) {
   }, []);
 
   const scrollToSection = (id) => {
+    if (id === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setIsMenuOpen(false);
+      return;
+    }
+
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: 'smooth' });
     setIsMenuOpen(false);
   };
 
+  const footerGroups = {
+    Product: [
+      { label: 'Features', target: 'features' },
+      { label: 'Pricing', target: 'pricing' },
+      { label: 'Security', target: 'how-it-works' },
+      { label: 'Roadmap', target: 'how-it-works' },
+    ],
+    Company: [
+      { label: 'About', target: 'top' },
+      { label: 'Blog', target: 'features' },
+      { label: 'Careers', target: 'pricing' },
+      { label: 'Contact', target: 'contact' },
+    ],
+    Legal: [
+      { label: 'Privacy', target: 'contact' },
+      { label: 'Terms', target: 'contact' },
+      { label: 'Security', target: 'features' },
+      { label: 'Compliance', target: 'contact' },
+    ],
+  };
+
   return (
-    <div className={isDark ? 'dark' : ''}>
+    <div className={isDark ? 'dark' : ''} id="top">
       <div className={`min-h-screen transition-colors duration-300 ${
         isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'
       }`}>
@@ -41,7 +68,7 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                   <Shield className="w-8 h-8 text-blue-600 group-hover:scale-110 transition-transform" />
                   <div className="absolute inset-0 bg-blue-600/20 rounded-full blur-lg group-hover:blur-xl transition-all"></div>
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">Cyberlearn</span>
+                <span className="font-display text-2xl font-bold bg-gradient-to-r from-[#0047AB] to-sky-500 bg-clip-text text-transparent">Cyberlearn</span>
               </div>
 
               {/* Desktop Menu */}
@@ -123,8 +150,8 @@ export default function LandingPage({ onStartTrial = () => {} }) {
             }`}></div>
             <div className={`absolute bottom-10 left-10 w-96 h-96 rounded-full blur-3xl animate-pulse ${
               isDark 
-                ? 'bg-purple-600/20' 
-                : 'bg-purple-400/10'
+                ? 'bg-[#0047AB]/15' 
+                : 'bg-[#0047AB]/8'
             }`} style={{animationDelay: '1s'}}></div>
           </div>
 
@@ -133,11 +160,11 @@ export default function LandingPage({ onStartTrial = () => {} }) {
               
               {/* Left Content */}
               <div className="space-y-8 animate-in fade-in slide-in-from-left duration-1000">
-                <div className="inline-block px-4 py-2 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-600/30">
-                  <span className="text-sm font-semibold text-blue-600">Cybersecurity Training Platform</span>
+                <div className="inline-block px-4 py-2 rounded-full bg-gradient-to-r from-[#0047AB]/10 to-white border border-[#0047AB]/20">
+                  <span className="text-sm font-semibold text-[#0047AB]">Employee Cyberthreat Vigilance System</span>
                 </div>
 
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight bg-gradient-to-r from-blue-600 via-purple-600 to-blue-400 bg-clip-text text-transparent">
+                <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight bg-gradient-to-r from-[#0047AB] via-sky-600 to-sky-400 bg-clip-text text-transparent">
                   Secure Your <span className="block">Organization</span> Today
                 </h1>
 
@@ -167,72 +194,77 @@ export default function LandingPage({ onStartTrial = () => {} }) {
               {/* Right Visual - Animated Dashboard Preview */}
               <div className="relative animate-in fade-in slide-in-from-right duration-1000 lg:block hidden">
                 <div className="relative group">
-                  {/* Glow Effect */}
-                  <div className={`absolute inset-0 rounded-2xl blur-2xl group-hover:blur-3xl transition-all ${
-                    isDark 
-                      ? 'bg-gradient-to-r from-blue-600/40 to-purple-600/40' 
-                      : 'bg-gradient-to-r from-blue-400/30 to-purple-400/30'
+                  <div className={`absolute inset-0 rounded-[2rem] blur-3xl transition-all ${
+                    isDark
+                      ? 'bg-[#0047AB]/20'
+                      : 'bg-[#0047AB]/10'
                   }`}></div>
 
-                  {/* Dashboard Card */}
-                  <div className={`relative rounded-2xl overflow-hidden backdrop-blur-xl border ${
-                    isDark 
-                      ? 'bg-slate-800/50 border-slate-700/50' 
-                      : 'bg-white/50 border-slate-300/50'
-                  } p-6 space-y-4 group-hover:scale-105 transition-transform duration-300`}>
-                    
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
+                  <div className={`relative rounded-[2rem] overflow-hidden border shadow-2xl ${
+                    isDark
+                      ? 'bg-slate-900/90 border-slate-700/70'
+                      : 'bg-white border-slate-200/80'
+                  } group-hover:scale-[1.02] transition-transform duration-300`}>
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/70 dark:border-slate-700/70 bg-white/90 dark:bg-slate-900/90">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600"></div>
+                        <div className="flex gap-1.5">
+                          <span className="w-3 h-3 rounded-full bg-red-400"></span>
+                          <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+                          <span className="w-3 h-3 rounded-full bg-emerald-400"></span>
+                        </div>
                         <div>
-                          <p className="font-semibold text-sm">Admin Dashboard</p>
-                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>March 2026</p>
+                          <p className="font-display font-semibold text-sm">Team Operations View</p>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Workforce awareness dashboard</p>
                         </div>
                       </div>
-                      <Award className="w-5 h-5 text-blue-600" />
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#0047AB]/10 text-[#0047AB]">Live</span>
                     </div>
 
-                    {/* Metrics */}
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Completion Rate</span>
-                          <span className="text-blue-600 font-semibold">87%</span>
-                        </div>
-                        <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                          <div className="h-full w-[87%] bg-gradient-to-r from-blue-600 to-blue-400 rounded-full animate-pulse"></div>
-                        </div>
+                    <div className="p-5 space-y-4">
+                      <div className="rounded-[1.5rem] overflow-hidden border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                        <img
+                          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=80"
+                          alt="Workers at desktop computers in an office"
+                          className="h-[310px] w-full object-cover"
+                        />
                       </div>
 
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Threat Reports</span>
-                          <span className="text-orange-600 font-semibold">12</span>
-                        </div>
-                        <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                          <div className="h-full w-1/2 bg-gradient-to-r from-orange-600 to-orange-400 rounded-full"></div>
-                        </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { label: 'Completion', value: '87%' },
+                          { label: 'Reports', value: '12' },
+                          { label: 'Teams', value: '24' },
+                        ].map((item) => (
+                          <div key={item.label} className={`rounded-xl border p-3 text-center ${
+                            isDark
+                              ? 'border-slate-700 bg-slate-800/60'
+                              : 'border-slate-200 bg-slate-50'
+                          }`}>
+                            <p className="text-xs text-slate-500">{item.label}</p>
+                            <p className="font-display text-lg font-bold text-[#0047AB]">{item.value}</p>
+                          </div>
+                        ))}
                       </div>
 
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Avg. Score</span>
-                          <span className="text-green-600 font-semibold">92%</span>
+                      <div className={`rounded-xl border p-4 ${
+                        isDark
+                          ? 'border-slate-700 bg-slate-800/80'
+                          : 'border-slate-200 bg-white'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-semibold">Awareness snapshot</p>
+                          <Award className="w-4 h-4 text-[#0047AB]" />
                         </div>
-                        <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                          <div className="h-full w-[92%] bg-gradient-to-r from-green-600 to-green-400 rounded-full"></div>
+                        <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+                          <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-[#0047AB] to-sky-400"></div>
                         </div>
                       </div>
                     </div>
-
-                    {/* ...floating stats removed... */}
                   </div>
-                </div>
 
-                {/* Animated Floating Elements */}
-                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl animate-bounce" style={{animationDuration: '3s'}}></div>
-                <div className="absolute -top-10 -left-10 w-32 h-32 bg-purple-600/10 rounded-full blur-3xl animate-bounce" style={{animationDuration: '4s', animationDelay: '1s'}}></div>
+                  <div className="absolute -bottom-8 -right-8 w-36 h-36 bg-[#0047AB]/10 rounded-full blur-3xl animate-bounce" style={{animationDuration: '3s'}}></div>
+                  <div className="absolute -top-8 -left-8 w-28 h-28 bg-sky-400/10 rounded-full blur-3xl animate-bounce" style={{animationDuration: '4s', animationDelay: '1s'}}></div>
+                </div>
               </div>
             </div>
           </div>
@@ -245,14 +277,14 @@ export default function LandingPage({ onStartTrial = () => {} }) {
           <div className="max-w-7xl mx-auto">
             {/* Section Header */}
             <div className="text-center mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-                Powerful Features for
-                <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Modern Security</span>
+                <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
+                Vigilance-Driven Features for
+                <span className="block bg-gradient-to-r from-[#0047AB] to-sky-500 bg-clip-text text-transparent"> Modern Threat Defense</span>
               </h2>
               <p className={`text-xl max-w-2xl mx-auto ${
                 isDark ? 'text-slate-300' : 'text-slate-600'
               }`}>
-                Everything you need to build a secure, aware organization
+                Everything you need to build a vigilant, security-focused organization
               </p>
             </div>
 
@@ -281,7 +313,7 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                   icon: Users,
                   title: "Team Management",
                   description: "Create company profiles, add employees, assign departments, and manage roles seamlessly",
-                  color: "from-purple-600 to-purple-400"
+                  color: "from-[#0047AB] to-sky-500"
                 },
                 {
                   icon: BarChart3,
@@ -334,9 +366,9 @@ export default function LandingPage({ onStartTrial = () => {} }) {
           <div className="max-w-7xl mx-auto">
             {/* Section Header */}
             <div className="text-center mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+                <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
                 How Cyberlearn
-                <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Powers Your Organization</span>
+                <span className="block bg-gradient-to-r from-[#0047AB] to-sky-500 bg-clip-text text-transparent"> Powers Your Organization</span>
               </h2>
             </div>
 
@@ -405,8 +437,8 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                       {/* Step Number Circle */}
                       <div className={`relative flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl transition-all group-hover:scale-110 ${
                         isDark
-                          ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white'
-                          : 'bg-gradient-to-br from-blue-500 to-purple-500 text-white'
+                        ? 'bg-gradient-to-br from-[#0047AB] to-sky-600 text-white'
+                        : 'bg-gradient-to-br from-[#0047AB] to-sky-500 text-white'
                       }`}>
                         {item.step}
                         <div className="absolute inset-0 rounded-full bg-blue-600/20 group-hover:bg-blue-600/40 transition-all blur-lg"></div>
@@ -452,9 +484,9 @@ export default function LandingPage({ onStartTrial = () => {} }) {
         }`}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+                <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
                 Why Choose
-                <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Cyberlearn?</span>
+                <span className="block bg-gradient-to-r from-[#0047AB] to-sky-500 bg-clip-text text-transparent"> Cyberlearn?</span>
               </h2>
             </div>
 
@@ -504,9 +536,9 @@ export default function LandingPage({ onStartTrial = () => {} }) {
         }`}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+                <h2 className="font-display text-4xl sm:text-5xl font-bold mb-4">
                 Simple,
-                <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Transparent Pricing</span>
+                <span className="block bg-gradient-to-r from-[#0047AB] to-sky-500 bg-clip-text text-transparent"> Transparent Pricing</span>
               </h2>
               <p className={`text-xl max-w-2xl mx-auto ${
                 isDark ? 'text-slate-300' : 'text-slate-600'
@@ -547,15 +579,15 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                   className={`relative rounded-2xl transition-all duration-300 hover:scale-105 border-2 ${
                     plan.highlighted
                       ? isDark
-                        ? 'bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-600 shadow-2xl'
-                        : 'bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-600 shadow-xl'
-                      : isDark
-                      ? 'bg-slate-800/50 border-slate-700/50 hover:border-blue-600/50'
-                      : 'bg-white border-slate-200/50 hover:border-blue-600/30'
+                        ? 'bg-gradient-to-br from-[#0047AB]/15 to-sky-100 border-[#0047AB] shadow-2xl'
+                        : 'bg-gradient-to-br from-[#0047AB]/8 to-white border-[#0047AB] shadow-xl'
+                  : isDark
+                  ? 'bg-slate-800/50 border-slate-700/50 hover:border-blue-600/50'
+                  : 'bg-white border-slate-200/50 hover:border-blue-600/30'
                   }`}
                 >
                   {plan.highlighted && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold rounded-full">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#0047AB] to-sky-500 text-white text-sm font-bold rounded-full">
                       Most Popular
                     </div>
                   )}
@@ -571,7 +603,7 @@ export default function LandingPage({ onStartTrial = () => {} }) {
 
                     <button onClick={() => onStartTrial()} className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 mb-6 ${
                       plan.highlighted
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg'
+                        ? 'bg-gradient-to-r from-[#0047AB] to-sky-500 text-white hover:shadow-lg'
                         : isDark
                         ? 'bg-slate-700 hover:bg-slate-600'
                         : 'bg-slate-100 hover:bg-slate-200'
@@ -582,7 +614,7 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                     <div className="space-y-3">
                       {plan.features.map((feature, i) => (
                         <div key={i} className="flex items-center gap-3">
-                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-xs">✓</div>
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#0047AB] to-sky-500 flex items-center justify-center text-white text-xs">✓</div>
                           <span className={isDark ? 'text-slate-300' : 'text-slate-600'}>{feature}</span>
                         </div>
                       ))}
@@ -605,9 +637,9 @@ export default function LandingPage({ onStartTrial = () => {} }) {
           isDark ? 'bg-slate-800/50' : 'bg-slate-50'
         }`}>
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl sm:text-5xl font-bold mb-6">
+                <h2 className="font-display text-4xl sm:text-5xl font-bold mb-6">
               Ready to Secure Your
-              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Organization?</span>
+              <span className="block bg-gradient-to-r from-[#0047AB] to-sky-500 bg-clip-text text-transparent"> Organization?</span>
             </h2>
             <p className={`text-xl mb-8 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               Join hundreds of organizations building a security-aware culture with Cyberlearn
@@ -646,30 +678,28 @@ export default function LandingPage({ onStartTrial = () => {} }) {
 
                 <div className="space-y-6">
                   {[
-                    {
-                      icon: Mail,
-                      label: "Email",
-                      value: "hello@cyberlearn.io",
-                      color: "from-blue-600 to-blue-400"
-                    },
-                    {
-                      icon: Share2,
-                      label: "LinkedIn",
-                      value: "@cyberlearn",
-                      color: "from-blue-600 to-cyan-400"
-                    },
-                    {
-                      icon: MessageCircle,
-                      label: "WhatsApp",
-                      value: "+1 (555) 123-4567",
-                      color: "from-green-600 to-green-400"
-                    },
-                  ].map((contact, idx) => {
+                  {
+                    icon: Mail,
+                    label: "Email",
+                    value: "nansubugaluis@gmail.com",
+                    color: "from-blue-600 to-blue-400",
+                    href: "mailto:nansubugaluis@gmail.com"
+                  },
+                  {
+                    icon: MessageCircle,
+                    label: "WhatsApp",
+                    value: "+256701948579",
+                    color: "from-green-600 to-green-400",
+                    href: "https://wa.me/256701948579"
+                  },
+                ].map((contact, idx) => {
                     const Icon = contact.icon;
                     return (
                       <a
                         key={idx}
-                        href="#"
+                        href={contact.href}
+                        target={contact.href.startsWith('http') ? '_blank' : undefined}
+                        rel={contact.href.startsWith('http') ? 'noreferrer' : undefined}
                         className={`flex items-start gap-4 p-4 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg group ${
                           isDark
                             ? 'hover:bg-slate-800/50'
@@ -691,22 +721,23 @@ export default function LandingPage({ onStartTrial = () => {} }) {
 
                 {/* Social Links */}
                 <div className="space-y-4">
-                  <p className="text-sm font-semibold text-slate-500">Follow us on social media</p>
+                  <p className="text-sm font-semibold text-slate-500">Contact us</p>
                   <div className="flex gap-4">
                     {[
-                      { name: 'LinkedIn', icon: Share2 },
-                      { name: 'Email', icon: Mail },
-                      { name: 'WhatsApp', icon: MessageCircle }
+                      { name: 'Email', icon: Mail, href: 'mailto:nansubugaluis@gmail.com' },
+                      { name: 'WhatsApp', icon: MessageCircle, href: 'https://wa.me/256701948579' }
                     ].map((social, idx) => {
                       const Icon = social.icon;
                       return (
                         <a
                           key={idx}
-                          href="#"
+                          href={social.href}
+                          target={social.href.startsWith('http') ? '_blank' : undefined}
+                          rel={social.href.startsWith('http') ? 'noreferrer' : undefined}
                           className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg ${
                             isDark
-                              ? 'bg-slate-800 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600'
-                              : 'bg-slate-100 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600'
+                              ? 'bg-slate-800 hover:bg-gradient-to-r hover:from-[#0047AB] hover:to-sky-600'
+                              : 'bg-slate-100 hover:bg-gradient-to-r hover:from-[#0047AB] hover:to-sky-600'
                           }`}
                         >
                           <Icon className={`w-6 h-6 transition-colors ${
@@ -778,7 +809,7 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                     ></textarea>
                   </div>
 
-                  <button type="submit" className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300">
+                  <button type="submit" className="w-full py-3 bg-[#0047AB] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300">
                     Send Message
                   </button>
                 </form>
@@ -805,30 +836,63 @@ export default function LandingPage({ onStartTrial = () => {} }) {
 
               {/* Product */}
               <div>
-                <h4 className="font-semibold text-white mb-4">Product</h4>
+                <h4 className="font-display font-semibold text-white mb-4">Product</h4>
                 <ul className="space-y-2 text-slate-400 text-sm">
-                  {['Features', 'Pricing', 'Security', 'Roadmap'].map(item => (
-                    <li key={item}><a href="#" className="hover:text-blue-400 transition-colors">{item}</a></li>
+                  {footerGroups.Product.map((item) => (
+                    <li key={item.label}>
+                      <a
+                        href={`#${item.target}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          scrollToSection(item.target);
+                        }}
+                        className="hover:text-[#0047AB] transition-colors"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
                   ))}
                 </ul>
               </div>
 
               {/* Company */}
               <div>
-                <h4 className="font-semibold text-white mb-4">Company</h4>
+                <h4 className="font-display font-semibold text-white mb-4">Company</h4>
                 <ul className="space-y-2 text-slate-400 text-sm">
-                  {['About', 'Blog', 'Careers', 'Contact'].map(item => (
-                    <li key={item}><a href="#" className="hover:text-blue-400 transition-colors">{item}</a></li>
+                  {footerGroups.Company.map((item) => (
+                    <li key={item.label}>
+                      <a
+                        href={`#${item.target}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          scrollToSection(item.target);
+                        }}
+                        className="hover:text-[#0047AB] transition-colors"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
                   ))}
                 </ul>
               </div>
 
               {/* Legal */}
               <div>
-                <h4 className="font-semibold text-white mb-4">Legal</h4>
+                <h4 className="font-display font-semibold text-white mb-4">Legal</h4>
                 <ul className="space-y-2 text-slate-400 text-sm">
-                  {['Privacy', 'Terms', 'Security', 'Compliance'].map(item => (
-                    <li key={item}><a href="#" className="hover:text-blue-400 transition-colors">{item}</a></li>
+                  {footerGroups.Legal.map((item) => (
+                    <li key={item.label}>
+                      <a
+                        href={`#${item.target}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          scrollToSection(item.target);
+                        }}
+                        className="hover:text-[#0047AB] transition-colors"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -840,15 +904,24 @@ export default function LandingPage({ onStartTrial = () => {} }) {
                 © 2026 Cyberlearn. All rights reserved.
               </p>
               <div className="flex gap-4 mt-4 sm:mt-0">
-                {[Mail, Share2, MessageCircle].map((Icon, idx) => (
+                {[
+                  { icon: Mail, href: 'mailto:nansubugaluis@gmail.com', label: 'Email' },
+                  { icon: MessageCircle, href: 'https://wa.me/256701948579', label: 'WhatsApp' },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
                   <a
-                    key={idx}
-                    href="#"
-                    className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:text-blue-400 hover:bg-slate-700 transition-all"
+                    key={item.label}
+                    href={item.href}
+                    aria-label={item.label}
+                    target={item.href.startsWith('http') ? '_blank' : undefined}
+                    rel={item.href.startsWith('http') ? 'noreferrer' : undefined}
+                    className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:text-[#0047AB] hover:bg-slate-700 transition-all"
                   >
                     <Icon className="w-5 h-5" />
                   </a>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

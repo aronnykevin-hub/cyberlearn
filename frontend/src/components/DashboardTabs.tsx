@@ -17,7 +17,17 @@ interface DashboardTabsProps {
 
 export function DashboardTabs({ tabs, activeTab, onChange, className = '' }: DashboardTabsProps) {
   return (
-    <div className={`sticky top-16 z-30 -mx-4 px-4 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 ${className}`}>
+    <div
+      className={`hidden md:block sticky top-16 z-30 -mx-4 px-4 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 ${className}`}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+          Workspace Navigation
+        </span>
+        <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+      </div>
+
       <div className="flex gap-2 overflow-x-auto pb-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;

@@ -1,7 +1,8 @@
 -- Team Members: default department bootstrap + global user search
 
 CREATE OR REPLACE FUNCTION public.ensure_company_default_departments(
-  p_company_id UUID
+  p_company_id UUID,
+  p_departments TEXT[] DEFAULT NULL
 )
 RETURNS TABLE (
   department_id UUID,
@@ -15,6 +16,7 @@ SET search_path = public
 AS $$
 DECLARE
   v_user_id UUID := auth.uid();
+  v_department_names TEXT[];
 BEGIN
   IF p_company_id IS NULL THEN
     RAISE EXCEPTION 'Company id is required';
@@ -39,15 +41,30 @@ BEGIN
     RAISE EXCEPTION 'Only company admins can bootstrap departments';
   END IF;
 
+  v_department_names := COALESCE(p_departments, ARRAY[]::TEXT[]);
+  IF array_length(v_department_names, 1) IS NULL THEN
+    v_department_names := ARRAY[
+      'IT / Cybersecurity',
+      'Finance',
+      'Customer Care',
+      'Human Resources (HR)',
+      'Marketing',
+      'Operations'
+    ]::TEXT[];
+  END IF;
+
   RETURN QUERY
-  WITH defaults(name, code, ord) AS (
-    VALUES
-      ('IT / Cybersecurity', 'ITSEC', 1),
-      ('Finance', 'FIN', 2),
-      ('Customer Care', 'CC', 3),
-      ('Human Resources (HR)', 'HR', 4),
-      ('Marketing', 'MKT', 5),
-      ('Operations', 'OPS', 6)
+  WITH normalized AS (
+    SELECT DISTINCT ON (LOWER(TRIM(src.name)))
+      TRIM(src.name) AS name,
+      LEFT(
+        REGEXP_REPLACE(UPPER(TRIM(src.name)), '[^A-Z0-9]+', '_', 'g'),
+        32
+      ) AS code,
+      src.ord
+    FROM unnest(v_department_names) WITH ORDINALITY AS src(name, ord)
+    WHERE TRIM(src.name) <> ''
+    ORDER BY LOWER(TRIM(src.name)), src.ord
   ),
   existing AS (
     SELECT d.name
@@ -56,10 +73,10 @@ BEGIN
   ),
   inserted AS (
     INSERT INTO public.departments (company_id, name, code)
-    SELECT p_company_id, d.name, d.code
-    FROM defaults d
+    SELECT p_company_id, n.name, COALESCE(NULLIF(n.code, ''), LEFT(REGEXP_REPLACE(UPPER(n.name), '[^A-Z0-9]+', '_', 'g'), 32))
+    FROM normalized n
     LEFT JOIN existing e
-      ON e.name = d.name
+      ON e.name = n.name
     WHERE e.name IS NULL
     ON CONFLICT (company_id, name) DO NOTHING
     RETURNING id, name, code
@@ -70,11 +87,11 @@ BEGIN
       dept.name,
       dept.code,
       EXISTS (SELECT 1 FROM inserted i WHERE i.id = dept.id) AS created,
-      d.ord
-    FROM defaults d
+      n.ord
+    FROM normalized n
     JOIN public.departments dept
       ON dept.company_id = p_company_id
-     AND dept.name = d.name
+     AND dept.name = n.name
   )
   SELECT
     fr.id AS department_id,
@@ -187,7 +204,8 @@ CREATE OR REPLACE FUNCTION public.create_company_with_owner(
   p_registration_number TEXT,
   p_industry TEXT,
   p_country TEXT,
-  p_address TEXT
+  p_address TEXT,
+  p_departments TEXT[] DEFAULT NULL
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -287,12 +305,12 @@ BEGIN
       updated_at = NOW()
   WHERE user_id = v_owner_id;
 
-  PERFORM public.ensure_company_default_departments(v_company_id);
+  PERFORM public.ensure_company_default_departments(v_company_id, p_departments);
 
   RETURN v_company_id;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.ensure_company_default_departments(UUID) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.ensure_company_default_departments(UUID, TEXT[]) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.search_cyberlearn_users(UUID, TEXT, INTEGER) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.create_company_with_owner(TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.create_company_with_owner(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[]) TO authenticated, service_role;

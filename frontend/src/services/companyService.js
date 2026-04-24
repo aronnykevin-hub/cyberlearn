@@ -18,10 +18,11 @@ export const companyService = {
       const { data, error } = await supabase
         .rpc('create_company_with_owner', {
           p_name: companyData.name,
-          p_registration_number: companyData.registrationNumber || null,
+          p_registration_number: null,
           p_industry: companyData.industry || null,
           p_country: companyData.country || null,
-          p_address: companyData.address || null
+          p_address: companyData.address || null,
+          p_departments: Array.isArray(companyData.departments) ? companyData.departments : null
         });
 
       if (error) throw error;

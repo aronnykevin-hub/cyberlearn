@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 import { companyService } from '../services/companyService';
 import { ensureDepartmentLearningModules } from '../services/trainingModuleService';
+import DashboardTabs from './DashboardTabs';
 import CompanyMembersPanel from './CompanyMembersPanel';
 import AdminUserAssignment from './AdminUserAssignment';
 import AdminReportsPanel from './AdminReportsPanel';
@@ -281,6 +282,15 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
     }
   ];
 
+  const dashboardTabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'team', label: 'Team', icon: Users, badge: stats.employees },
+    { id: 'training', label: 'Training', icon: BookOpen, badge: stats.trainingModules },
+    { id: 'reports', label: 'Reports', icon: Zap, badge: stats.threatReports },
+    { id: 'certificates', label: 'Certificates', icon: Award, badge: stats.certificates },
+    { id: 'profile', label: 'My Profile', icon: Settings },
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -326,6 +336,8 @@ export const CompanyDashboard = ({ companyId, companyName }) => {
           </div>
         </div>
       </div>
+
+      <DashboardTabs tabs={dashboardTabs} activeTab={activeTab} onChange={openTab} />
 
       {activeTab === 'overview' && (
         <div className="space-y-8">

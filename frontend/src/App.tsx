@@ -110,7 +110,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="font-bold text-slate-900 dark:text-white">Cyberlearn</span>
-                    <span className="text-slate-600 dark:text-slate-400 text-xs ml-2 hidden sm:inline">Cybersecurity Training Platform</span>
+                    <span className="text-slate-600 dark:text-slate-400 text-xs ml-2 hidden sm:inline">Employee Cyberthreat Vigilance System</span>
                   </div>
                 </div>
                 <button
@@ -164,7 +164,7 @@ export default function App() {
               </div>
               <div>
                 <span className="font-bold text-slate-900 dark:text-white">Cyberlearn</span>
-                <span className="text-slate-600 dark:text-slate-400 text-xs ml-2 hidden sm:inline">Cybersecurity Training Platform</span>
+                <span className="text-slate-600 dark:text-slate-400 text-xs ml-2 hidden sm:inline">Employee Cyberthreat Vigilance System</span>
               </div>
             </header>
             <div className="flex-1 flex items-center justify-center p-6">
@@ -208,7 +208,7 @@ export default function App() {
                 </div>
                 <div>
                   <span className="font-bold text-slate-900 dark:text-white text-sm md:text-base">Cyberlearn</span>
-                  <span className="hidden md:inline text-slate-600 dark:text-slate-400 text-xs ml-2">Security Training Platform</span>
+                  <span className="hidden md:inline text-slate-600 dark:text-slate-400 text-xs ml-2">Employee Cyberthreat Vigilance System</span>
                 </div>
               </div>
             </div>

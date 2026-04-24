@@ -37,7 +37,7 @@ export const NewUserOnboarding = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-3"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0047AB] mx-auto mb-3"></div>
           <p className="text-slate-600 dark:text-slate-400">Loading...</p>
         </div>
       </div>
@@ -53,8 +53,8 @@ export const NewUserOnboarding = () => {
       <div className="max-w-4xl mx-auto">
         {/* Welcome Section */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-4">
-            <Building2 className="w-8 h-8 text-indigo-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4">
+            <Building2 className="w-8 h-8 text-[#0047AB]" />
           </div>
           <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-3">
             Welcome to CyberLearn
@@ -67,7 +67,7 @@ export const NewUserOnboarding = () => {
         {/* What's Available */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border dark:border-slate-700 overflow-hidden mb-8">
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6 text-white">
+          <div className="bg-gradient-to-r from-[#0047AB] to-sky-600 px-8 py-6 text-white">
             <h2 className="text-2xl font-bold">Get Started in 3 Steps</h2>
           </div>
 
@@ -143,7 +143,7 @@ export const NewUserOnboarding = () => {
 
         {/* Features Overview */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border dark:border-slate-700 overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-8 py-6 text-white">
+          <div className="bg-gradient-to-r from-sky-600 to-[#0047AB] px-8 py-6 text-white">
             <h2 className="text-2xl font-bold">What You'll Get As Admin</h2>
           </div>
 
@@ -192,7 +192,7 @@ export const NewUserOnboarding = () => {
         <div className="mt-12 text-center">
           <button
             onClick={() => setIsCreateDialogOpen(true)}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-indigo-500/50 transition-all font-bold text-lg"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#0047AB] to-sky-600 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all font-bold text-lg"
           >
             <Building2 className="w-6 h-6" />
             Create Your Organization
