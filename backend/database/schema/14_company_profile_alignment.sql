@@ -29,114 +29,8 @@ FROM public.companies c
 WHERE c.created_by = up.user_id
   AND (up.company_id IS NULL OR up.company_id = c.id);
 
-CREATE OR REPLACE FUNCTION public.create_company_with_owner(
-  p_name TEXT,
-  p_registration_number TEXT,
-  p_industry TEXT,
-  p_country TEXT,
-  p_address TEXT
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_owner_id UUID;
-  v_company_id UUID;
-  v_auth_user auth.users%ROWTYPE;
-BEGIN
-  v_owner_id := auth.uid();
-
-  IF v_owner_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-
-  SELECT *
-  INTO v_auth_user
-  FROM auth.users au
-  WHERE au.id = v_owner_id;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Authenticated user record not found';
-  END IF;
-
-  INSERT INTO public.users (id, email)
-  VALUES (v_owner_id, COALESCE(v_auth_user.email, ''))
-  ON CONFLICT (id) DO UPDATE
-    SET email = EXCLUDED.email,
-        updated_at = NOW();
-
-  INSERT INTO public.user_profiles (
-    user_id,
-    company_id,
-    full_name,
-    phone,
-    avatar_url,
-    role,
-    is_department_assigned,
-    is_active
-  )
-  VALUES (
-    v_owner_id,
-    NULL,
-    public.resolve_auth_display_name(v_auth_user.raw_user_meta_data, v_auth_user.email),
-    COALESCE(v_auth_user.raw_user_meta_data->>'phone_number', v_auth_user.raw_user_meta_data->>'phone'),
-    v_auth_user.raw_user_meta_data->>'avatar_url',
-    NULL,
-    false,
-    true
-  )
-  ON CONFLICT (user_id) DO UPDATE
-    SET full_name = COALESCE(public.user_profiles.full_name, EXCLUDED.full_name),
-        phone = COALESCE(public.user_profiles.phone, EXCLUDED.phone),
-        avatar_url = COALESCE(public.user_profiles.avatar_url, EXCLUDED.avatar_url),
-        is_active = true;
-
-  INSERT INTO public.companies (
-    name,
-    registration_number,
-    industry,
-    country,
-    address,
-    created_by
-  )
-  VALUES (
-    p_name,
-    p_registration_number,
-    p_industry,
-    p_country,
-    p_address,
-    v_owner_id
-  )
-  RETURNING id INTO v_company_id;
-
-  INSERT INTO public.company_members (
-    company_id,
-    user_id,
-    role,
-    added_by
-  )
-  VALUES (
-    v_company_id,
-    v_owner_id,
-    'owner',
-    v_owner_id
-  )
-  ON CONFLICT (company_id, user_id) DO UPDATE
-    SET role = 'owner',
-        added_by = EXCLUDED.added_by;
-
-  UPDATE public.user_profiles
-  SET role = 'admin',
-      company_id = v_company_id,
-      is_active = true,
-      updated_at = NOW()
-  WHERE user_id = v_owner_id;
-
-  RETURN v_company_id;
-END;
-$$;
+-- create_company_with_owner moved to 15_team_member_user_search_and_default_departments.sql
+-- This file previously had an outdated version without p_departments parameter.
 
 CREATE OR REPLACE FUNCTION public.add_user_to_company(
   p_company_id UUID,
@@ -316,6 +210,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.create_company_with_owner(TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated, service_role;
+-- GRANT moved to 15_team_member_user_search_and_default_departments.sql with correct signature
+-- GRANT EXECUTE ON FUNCTION public.create_company_with_owner(TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.add_user_to_company(UUID, UUID, UUID, TEXT) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.assign_user_to_department(UUID, UUID, UUID) TO authenticated, service_role;
