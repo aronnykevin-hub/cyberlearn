@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Moon, Sun, ArrowRight, Shield, Users, BookOpen, BarChart3, Bell, Award, Mail, Share2, MessageCircle } from 'lucide-react';
+import { Menu, X, Moon, Sun, ArrowRight, Shield, Users, BookOpen, BarChart3, Bell, Award, Mail, Share2, MessageCircle, Sparkles, Rocket } from 'lucide-react';
 
 export default function LandingPage({ onStartTrial = () => {} }) {
   const [isDark, setIsDark] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [showFloatingCTA, setShowFloatingCTA] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', organization: '', message: '' });
   const [contactChannel, setContactChannel] = useState('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
 
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+      // Show floating CTA when scrolled past hero section (300px)
+      setShowFloatingCTA(window.scrollY > 300);
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -88,6 +93,54 @@ export default function LandingPage({ onStartTrial = () => {} }) {
       <div className={`min-h-screen transition-colors duration-300 ${
         isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'
       }`}>
+        
+        {/* ============ CREATIVE FLOATING CTA BUTTONS ============ */}
+        
+        {/* STICKY BAR - Just Below Navigation */}
+        {showFloatingCTA && (
+          <div className="fixed top-16 left-0 right-0 z-40 bg-gradient-to-r from-blue-600/95 to-cyan-500/95 backdrop-blur-md border-b border-blue-400/30 shadow-xl">
+            <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-pulse" />
+                <p className="text-white font-semibold text-sm sm:text-base hidden sm:block">
+                  Ready to secure your organization?
+                </p>
+              </div>
+              <div className="flex gap-2 sm:gap-3">
+                {/* Watch Demo */}
+                <button
+                  onClick={() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')}
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105 active:scale-95 border border-white/20"
+                  title="Watch Demo"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Demo
+                </button>
+
+                {/* Join Us Now */}
+                <button
+                  onClick={() => onStartTrial()}
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105 active:scale-95 border border-white/20"
+                  title="Join Us Now"
+                >
+                  <Users className="w-4 h-4" />
+                  Join
+                </button>
+
+                {/* Start Free Trial - Primary */}
+                <button
+                  onClick={() => onStartTrial()}
+                  className="flex items-center gap-2 px-5 sm:px-6 py-2 bg-white text-blue-600 rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all duration-200 active:scale-95 sm:text-base text-sm whitespace-nowrap"
+                  title="Start Free Trial"
+                >
+                  <Rocket className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">Start Trial</span>
+                  <span className="sm:hidden">Start</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* ============ NAVIGATION ============ */}
         <nav className={`fixed w-full z-50 transition-all duration-300 ${

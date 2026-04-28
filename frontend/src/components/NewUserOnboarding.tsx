@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, ArrowRight, CheckCircle, Lock } from 'lucide-react';
 import { permissionService } from '../services/permissionService';
-import CreateCompanyDialog from './CreateCompanyDialog';
+import { CreateCompanyPage } from './CreateCompanyPage';
 import CompanyDashboard from './CompanyDashboard';
 
 export const NewUserOnboarding = () => {
   const [stage, setStage] = useState('loading');
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showCreateCompanyPage, setShowCreateCompanyPage] = useState(false);
   const [userCompany, setUserCompany] = useState(null);
 
   useEffect(() => {
@@ -46,6 +46,15 @@ export const NewUserOnboarding = () => {
 
   if (stage === 'dashboard' && userCompany) {
     return <CompanyDashboard companyId={userCompany.id} companyName={userCompany.name} />;
+  }
+
+  if (showCreateCompanyPage) {
+    return (
+      <CreateCompanyPage 
+        onSuccess={handleCreateSuccess}
+        onCancel={() => setShowCreateCompanyPage(false)}
+      />
+    );
   }
 
   return (
@@ -89,7 +98,7 @@ export const NewUserOnboarding = () => {
                     Set up your company profile, configure departments, and define your security policies. You'll become an admin immediately.
                   </p>
                   <button
-                    onClick={() => setIsCreateDialogOpen(true)}
+                    onClick={() => setShowCreateCompanyPage(true)}
                     className="inline-flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                   >
                     <ArrowRight className="w-4 h-4" />
@@ -191,7 +200,7 @@ export const NewUserOnboarding = () => {
         {/* Call to Action */}
         <div className="mt-12 text-center">
           <button
-            onClick={() => setIsCreateDialogOpen(true)}
+            onClick={() => setShowCreateCompanyPage(true)}
             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#0047AB] to-sky-600 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all font-bold text-lg"
           >
             <Building2 className="w-6 h-6" />
@@ -203,11 +212,7 @@ export const NewUserOnboarding = () => {
         </div>
       </div>
 
-      <CreateCompanyDialog
-        isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
-        onSuccess={handleCreateSuccess}
-      />
+
     </div>
   );
 };
